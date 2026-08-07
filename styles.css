@@ -437,6 +437,13 @@ main {
   border-radius: var(--radius);
   padding: 18px;
   box-shadow: var(--shadow);
+  position: relative;
+  height: 400px;
+}
+
+#trend-chart {
+  width: 100%;
+  height: 100%;
 }
 
 .empty-msg { text-align: center; color: var(--text-soft); margin-top: 20px; }

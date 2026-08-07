@@ -515,3 +515,100 @@ main {
 .backup-card .hint { margin-bottom: 14px; }
 .backup-actions { display: flex; gap: 12px; }
 .backup-actions .save-btn { width: auto; flex: 1; padding: 12px 16px; }
+
+/* ---------- Sign out ---------- */
+.signout-btn {
+  border: 2px solid var(--pink-200);
+  background: var(--card);
+  color: var(--rose-600);
+  padding: 6px 14px;
+  border-radius: 999px;
+  font-family: inherit;
+  font-size: 0.85rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.signout-btn:hover { background: var(--pink-100); border-color: var(--pink-400); }
+
+/* ---------- Auth screen ---------- */
+.auth-screen {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  background: rgba(255, 245, 247, 0.95);
+  backdrop-filter: blur(2px);
+}
+
+.auth-card {
+  background: var(--card);
+  border-radius: var(--radius);
+  padding: 28px 24px;
+  box-shadow: var(--shadow);
+  width: 100%;
+  max-width: 360px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.auth-title {
+  font-size: 1.8rem;
+  font-weight: 800;
+  color: var(--rose-600);
+  text-align: center;
+}
+
+.auth-subtitle {
+  color: var(--text-soft);
+  text-align: center;
+  font-size: 0.95rem;
+  margin-bottom: 6px;
+}
+
+.auth-input {
+  width: 100%;
+  border: 2px solid var(--pink-100);
+  border-radius: 999px;
+  padding: 12px 16px;
+  font-family: inherit;
+  font-size: 0.95rem;
+  color: var(--text);
+  background: var(--pink-50);
+}
+
+.auth-input:focus { outline: none; border-color: var(--pink-400); }
+
+.auth-signup-btn {
+  border: none;
+  background: var(--pink-100);
+  color: var(--rose-600);
+  font-family: inherit;
+  font-size: 1rem;
+  font-weight: 800;
+  padding: 12px;
+  border-radius: 999px;
+  cursor: pointer;
+  transition: background 0.15s ease;
+}
+
+.auth-signup-btn:hover { background: var(--pink-200); }
+
+.auth-status {
+  text-align: center;
+  min-height: 1.2em;
+  font-weight: 700;
+  font-size: 0.9rem;
+  color: var(--text-soft);
+}
+
+.auth-hint {
+  text-align: center;
+  color: var(--text-soft);
+  font-size: 0.85rem;
+}

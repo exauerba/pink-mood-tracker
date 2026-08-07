@@ -12,6 +12,9 @@
   <link rel="stylesheet" href="styles.css">
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns@3.0.0/dist/chartjs-adapter-date-fns.bundle.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="supabase-config.js"></script>
+  <script src="supabase-auth.js"></script>
 </head>
 <body>
   <header class="app-header">
@@ -21,6 +24,7 @@
       <button class="tab" data-view="visualize">Visualize</button>
       <button class="tab" data-view="manage">Manage</button>
     </nav>
+    <button id="signout-btn" class="signout-btn" title="Sign out">Sign out</button>
   </header>
 
   <main>
@@ -111,5 +115,19 @@
 
   <script src="app.js"></script>
   <script src="charts.js"></script>
+
+  <!-- ============ AUTH SCREEN ============ -->
+  <div id="auth-screen" class="auth-screen hidden">
+    <div class="auth-card">
+      <h1 class="auth-title">🌸 bloom</h1>
+      <p class="auth-subtitle">Sign in to sync your data</p>
+      <input type="email" id="auth-email" class="auth-input" placeholder="Email" autocomplete="email">
+      <input type="password" id="auth-password" class="auth-input" placeholder="Password" autocomplete="current-password">
+      <button id="auth-signin-btn" class="save-btn">Sign in</button>
+      <button id="auth-signup-btn" class="auth-signup-btn">Create account</button>
+      <p id="auth-status" class="auth-status"></p>
+      <p class="auth-hint">New here? Use Create account.</p>
+    </div>
+  </div>
 </body>
 </html>

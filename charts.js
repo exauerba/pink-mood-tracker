@@ -257,6 +257,11 @@ function renderChart() {
     options: {
       responsive: true,
       maintainAspectRatio: false,
+      interaction: {
+        mode: 'nearest',
+        intersect: false,
+        axis: 'x',
+      },
       plugins: {
         normalBand: band
           ? { lo: band.lo, hi: band.hi, color: 'rgba(244,114,182,0.10)' }
@@ -272,6 +277,7 @@ function renderChart() {
         },
         tooltip: {
           titleFont: { family: 'Nunito', weight: 700 },
+          animation: { duration: 100 },
           callbacks: {
             label(context) {
               const raw = context.raw;

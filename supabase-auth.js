@@ -19,6 +19,9 @@ if (configured()) {
   client = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 }
 
+// Expose the client for the sync layer (null when not configured).
+window.bloomClient = client;
+
 function notConfiguredError() {
   return { error: 'Supabase is not configured yet.' };
 }
@@ -144,8 +147,9 @@ const signinBtn = document.getElementById('auth-signin-btn');
   const username = document.getElementById('auth-username');
   const password = document.getElementById('auth-password');
 
-  const applyAuthState = (loggedIn) => {
+  const applyAuthState = async (loggedIn) => {
     if (loggedIn) {
+      if (window.bloomSync) await window.bloomSync.pull();
       hideAuth();
       if (typeof renderTrack === 'function') renderTrack();
       if (typeof renderManage === 'function') renderManage();
@@ -228,10 +232,10 @@ const signinBtn = document.getElementById('auth-signin-btn');
     });
   }
 
-  window.bloomAuth.onAuthChange(({ event, session }) => {
-    applyAuthState(!!session);
+  window.bloomAuth.onAuthChange(async ({ event, session }) => {
+    await applyAuthState(!!session);
   });
 
   const session = await window.bloomAuth.getSession();
-  applyAuthState(!!session);
+  await applyAuthState(!!session);
 });

@@ -7,6 +7,8 @@
 const STORE_TRACKERS = 'bloom.trackers';
 const STORE_ENTRIES = 'bloom.entries';
 
+let syncing = false; // true while a pull is loading data, to avoid push loops
+
 const GROUPS = {
   emotional: { label: 'Emotional states', color: '#ec4899' },
   physical: { label: 'Physical & sleep', color: '#a78bfa' },
@@ -63,6 +65,7 @@ function loadTrackers() {
 
 function saveTrackers(trackers) {
   localStorage.setItem(STORE_TRACKERS, JSON.stringify(trackers));
+  if (!syncing && window.bloomSync) window.bloomSync.pushTrackers(trackers);
 }
 
 function loadEntries() {
@@ -76,6 +79,7 @@ function loadEntries() {
 
 function saveEntries(entries) {
   localStorage.setItem(STORE_ENTRIES, JSON.stringify(entries));
+  if (!syncing && window.bloomSync) window.bloomSync.pushEntries(entries);
 }
 
 /* Migrate the old single-record-per-day format to the check-in array format. */
@@ -554,3 +558,20 @@ if ('serviceWorker' in navigator) {
     });
   });
 }
+
+/* ---------- Sync hook ---------- */
+
+// Called by supabase-sync.js to load cloud data into the app. Sets state,
+// persists to localStorage, and re-renders without triggering a push loop.
+window.bloomApp = {
+  loadLocalData(newTrackers, newEntries) {
+    syncing = true;
+    trackers = newTrackers;
+    entries = newEntries;
+    localStorage.setItem(STORE_TRACKERS, JSON.stringify(trackers));
+    localStorage.setItem(STORE_ENTRIES, JSON.stringify(entries));
+    syncing = false;
+    renderTrack();
+    renderManage();
+  }
+};

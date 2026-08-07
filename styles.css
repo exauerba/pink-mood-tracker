@@ -404,6 +404,25 @@ main {
 
 .pill-wrap { display: flex; flex-wrap: wrap; gap: 8px; }
 
+.pill-toolbar {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 8px;
+}
+
+.viz-tool {
+  border: none;
+  background: transparent;
+  color: var(--text-soft);
+  font-family: inherit;
+  font-weight: 800;
+  font-size: 0.85rem;
+  cursor: pointer;
+  padding: 2px 0;
+}
+
+.viz-tool:hover { color: var(--pink-500); }
+
 .pill {
   border: 2px solid var(--pink-200);
   background: var(--pink-50);

@@ -7,6 +7,7 @@
 
 let trendChart = null;
 let selectedForViz = new Set();
+let vizInitialized = false;
 
 function renderVisualize() {
   buildPills();
@@ -19,8 +20,24 @@ function buildPills() {
   wrap.innerHTML = '';
 
   // default: everything selected on first visit
-  if (selectedForViz.size === 0) {
+  if (!vizInitialized) {
     trackers.forEach((t) => selectedForViz.add(t.id));
+    vizInitialized = true;
+  }
+
+  const allBtn = document.getElementById('viz-select-all');
+  const noneBtn = document.getElementById('viz-select-none');
+  if (allBtn) {
+    allBtn.onclick = () => {
+      trackers.forEach((t) => selectedForViz.add(t.id));
+      renderVisualize();
+    };
+  }
+  if (noneBtn) {
+    noneBtn.onclick = () => {
+      selectedForViz.clear();
+      renderVisualize();
+    };
   }
 
   trackers.forEach((t) => {

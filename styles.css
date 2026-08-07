@@ -516,6 +516,23 @@ main {
 .backup-actions { display: flex; gap: 12px; }
 .backup-actions .save-btn { width: auto; flex: 1; padding: 12px 16px; }
 
+.danger-btn {
+  width: 100%;
+  border: 2px solid #c0392b;
+  background: transparent;
+  color: #c0392b;
+  font-family: inherit;
+  font-size: 1rem;
+  font-weight: 800;
+  padding: 12px;
+  border-radius: 999px;
+  cursor: pointer;
+  transition: background 0.15s ease;
+}
+
+.danger-btn:hover { background: #fde8e8; }
+.danger-btn:disabled { opacity: 0.5; cursor: default; }
+
 /* ---------- Sign out ---------- */
 .signout-btn {
   border: 2px solid var(--pink-200);

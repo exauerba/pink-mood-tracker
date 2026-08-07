@@ -26,13 +26,12 @@ function notConfiguredError() {
   return { error: 'Supabase is not configured yet.' };
 }
 
+// Keep messages generic so a stranger cannot tell which usernames exist.
+// Sign-in and sign-up always say the same thing regardless of the real cause.
 function friendlyError(message) {
   if (!message) return 'Something went wrong. Please try again.';
   const lower = String(message).toLowerCase();
-  if (lower.includes('already registered')) return 'That username is already taken.';
-  if (lower.includes('invalid login credentials')) return 'Incorrect username or password.';
   if (lower.includes('password should be')) return 'Password must be at least 6 characters.';
-  if (lower.includes('no user found') || lower.includes('not found')) return 'No account found for that username.';
   return 'Something went wrong. Please try again.';
 }
 
@@ -49,16 +48,19 @@ function usernameToEmail(username) {
   return username.toLowerCase() + '@bloom.app';
 }
 
+const SIGN_IN_FAILED = 'Incorrect username or password.';
+const SIGN_UP_FAILED = 'Could not create account. Please try again.';
+
 const auth = {
   async signUp(username, password) {
     if (!configured()) return notConfiguredError();
     if (!USERNAME_RE.test(username)) return usernameError();
     try {
       const { data, error } = await client.auth.signUp({ email: usernameToEmail(username), password });
-      if (error) return { error: friendlyError(error.message) };
+      if (error) return { error: SIGN_UP_FAILED };
       return { user: data.user };
     } catch (e) {
-      return { error: 'Something went wrong. Please try again.' };
+      return { error: SIGN_UP_FAILED };
     }
   },
 
@@ -67,10 +69,10 @@ const auth = {
     if (!USERNAME_RE.test(username)) return usernameError();
     try {
       const { data, error } = await client.auth.signInWithPassword({ email: usernameToEmail(username), password });
-      if (error) return { error: friendlyError(error.message) };
+      if (error) return { error: SIGN_IN_FAILED };
       return { user: data.user };
     } catch (e) {
-      return { error: 'Something went wrong. Please try again.' };
+      return { error: SIGN_IN_FAILED };
     }
   },
 
@@ -93,6 +95,30 @@ const auth = {
       return { session: data.session };
     } catch (e) {
       return { error: 'Something went wrong. Please try again.' };
+    }
+  },
+
+  async deleteAccount() {
+    if (!configured()) return notConfiguredError();
+    try {
+      const { data, error } = await client.auth.getSession();
+      if (error || !data.session) return { error: 'You need to be signed in to delete your account.' };
+
+      const res = await fetch(
+        SUPABASE_URL + '/functions/v1/delete-account',
+        { method: 'POST', headers: { Authorization: `Bearer ${data.session.access_token}` } }
+      );
+      if (!res.ok) {
+        const body = await res.json().catch(() => ({}));
+        return { error: body.error || 'Could not delete your account.' };
+      }
+
+      localStorage.removeItem('bloom.trackers');
+      localStorage.removeItem('bloom.entries');
+      await client.auth.signOut();
+      return { ok: true };
+    } catch (e) {
+      return { error: 'Could not delete your account.' };
     }
   },
 
@@ -147,6 +173,16 @@ const signinBtn = document.getElementById('auth-signin-btn');
   const username = document.getElementById('auth-username');
   const password = document.getElementById('auth-password');
 
+  // Simple client-side lockout: after too many failed sign-ins, pause for a
+  // while. This slows down password guessing. (Cloud CAPTCHA is the real fix.)
+  const MAX_FAILED = 5;
+  const LOCKOUT_MS = 60 * 1000;
+  let failedAttempts = 0;
+  let lockedUntil = 0;
+
+  const isLocked = () => Date.now() < lockedUntil;
+  const lockRemaining = () => Math.ceil((lockedUntil - Date.now()) / 1000);
+
   const applyAuthState = async (loggedIn) => {
     if (loggedIn) {
       if (window.bloomSync) await window.bloomSync.pull();
@@ -165,8 +201,34 @@ const signinBtn = document.getElementById('auth-signin-btn');
     });
   }
 
+  const deleteBtn = document.getElementById('delete-account-btn');
+  if (deleteBtn) {
+    deleteBtn.addEventListener('click', async () => {
+      const confirmed = window.confirm(
+        'This permanently deletes your bloom account and all of your cloud data. ' +
+        'This cannot be undone. Are you sure you want to continue?'
+      );
+      if (!confirmed) return;
+
+      deleteBtn.disabled = true;
+      const status = document.getElementById('delete-status');
+      if (status) status.textContent = 'Deleting account…';
+      const res = await window.bloomAuth.deleteAccount();
+      if (status) {
+        status.textContent = res.ok ? 'Account deleted.' : (res.error || 'Could not delete your account.');
+        status.style.color = res.ok ? 'var(--text-soft)' : '#c0392b';
+      }
+      deleteBtn.disabled = false;
+      if (res.ok) applyAuthState(false);
+    });
+  }
+
   if (signinBtn) {
     signinBtn.addEventListener('click', async () => {
+      if (isLocked()) {
+        setStatus(`Too many attempts. Try again in ${lockRemaining()}s.`, true);
+        return;
+      }
       if (!username.value || !password.value) {
         setStatus('Please enter your username and password.', true);
         return;
@@ -182,8 +244,17 @@ const signinBtn = document.getElementById('auth-signin-btn');
       const res = await window.bloomAuth.signIn(username.value, password.value);
       signinBtn.disabled = false;
       if (res.error) {
-        setStatus(res.error, true);
+        failedAttempts += 1;
+        if (failedAttempts >= MAX_FAILED) {
+          lockedUntil = Date.now() + LOCKOUT_MS;
+          failedAttempts = 0;
+          setStatus(`Too many attempts. Try again in ${lockRemaining()}s.`, true);
+        } else {
+          setStatus(res.error, true);
+        }
       } else {
+        failedAttempts = 0;
+        lockedUntil = 0;
         username.value = '';
         password.value = '';
         applyAuthState(true);

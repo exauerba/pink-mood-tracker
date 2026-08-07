@@ -516,16 +516,66 @@ document.getElementById('import-file').addEventListener('change', (e) => {
   reader.onload = () => {
     try {
       const data = JSON.parse(reader.result);
-      if (!Array.isArray(data.trackers) || typeof data.entries !== 'object') {
-        throw new Error('bad shape');
+      const validGroups = ['emotional', 'physical', 'mind', 'coping', 'craving', 'other'];
+      const status = document.getElementById('export-status');
+      const showError = () => {
+        status.textContent = 'That file did not work. Try your bloom backup file.';
+        setTimeout(() => { status.textContent = ''; }, 4000);
+      };
+
+      const sanitizedTrackers = [];
+      if (Array.isArray(data.trackers)) {
+        for (const t of data.trackers) {
+          if (
+            !t ||
+            typeof t.name !== 'string' || t.name.trim().length === 0 ||
+            typeof t.group !== 'string' || !validGroups.includes(t.group)
+          ) continue;
+          sanitizedTrackers.push({
+            id: (typeof t.id === 'string' && t.id) || slug(t.name),
+            name: t.name.trim(),
+            group: t.group,
+          });
+        }
       }
-      trackers = data.trackers;
-      entries = migrate(data.entries);
+
+      const sanitizedEntries = {};
+      if (data.entries && typeof data.entries === 'object' && !Array.isArray(data.entries)) {
+        for (const date of Object.keys(data.entries)) {
+          if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) continue;
+          const val = data.entries[date];
+          if (!Array.isArray(val)) continue;
+          const cleaned = [];
+          for (const c of val) {
+            if (
+              !c ||
+              typeof c.id !== 'string' || c.id.length === 0 ||
+              typeof c.time !== 'string' || !/^\d{2}:\d{2}$/.test(c.time) ||
+              !c.ratings || typeof c.ratings !== 'object' ||
+              !Object.values(c.ratings).every((r) => typeof r === 'number' && r >= 1 && r <= 7)
+            ) continue;
+            cleaned.push({
+              id: c.id,
+              time: c.time,
+              ratings: c.ratings,
+              note: typeof c.note === 'string' ? c.note : '',
+            });
+          }
+          if (cleaned.length > 0) sanitizedEntries[date] = cleaned;
+        }
+      }
+
+      if (sanitizedTrackers.length === 0 && Object.keys(sanitizedEntries).length === 0) {
+        showError();
+        return;
+      }
+
+      trackers = sanitizedTrackers;
+      entries = migrate(sanitizedEntries);
       saveTrackers(trackers);
       saveEntries(entries);
       renderTrack();
       renderManage();
-      const status = document.getElementById('export-status');
       status.textContent = 'Imported 🌸';
       setTimeout(() => { status.textContent = ''; }, 3000);
     } catch (err) {

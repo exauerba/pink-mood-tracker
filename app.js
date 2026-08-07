@@ -20,23 +20,15 @@ const GROUPS = {
 
 const DEFAULT_TRACKERS = [
   { name: 'Anxiety', group: 'emotional' },
-  { name: 'Panic sensations', group: 'emotional' },
-  { name: 'Hyperfocus pull', group: 'mind' },
-  { name: 'Ability to disengage', group: 'mind' },
-  { name: 'Energy', group: 'physical' },
-  { name: 'Mood', group: 'emotional' },
-  { name: 'Craving', group: 'craving' },
-  { name: 'Self-compassion', group: 'coping' },
-  { name: 'Sadness', group: 'emotional' },
+  { name: 'Low mood', group: 'emotional' },
   { name: 'Irritability', group: 'emotional' },
-  { name: 'Stress level', group: 'emotional' },
-  { name: 'Guilt', group: 'emotional' },
-  { name: 'Appetite', group: 'physical' },
+  { name: 'Panic', group: 'emotional' },
   { name: 'Sleep quality', group: 'physical' },
-  { name: 'Motivation', group: 'mind' },
-  { name: 'Social connection', group: 'coping' },
+  { name: 'Energy', group: 'physical' },
   { name: 'Concentration', group: 'mind' },
+  { name: 'Overthinking', group: 'mind' },
   { name: 'Coping skill use', group: 'coping' },
+  { name: 'Cravings', group: 'craving' },
 ];
 
 /* ---------- Storage layer ---------- */

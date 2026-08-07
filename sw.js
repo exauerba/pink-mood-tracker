@@ -3,7 +3,7 @@
  * Strategy: cache-first for app files and CDN assets.
  */
 
-const CACHE = 'bloom-v2';
+const CACHE = 'bloom-v3';
 
 // Files needed to run the app offline.
 const PRECACHE = [

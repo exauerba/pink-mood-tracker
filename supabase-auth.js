@@ -182,6 +182,7 @@ const signinBtn = document.getElementById('auth-signin-btn');
       } else {
         username.value = '';
         password.value = '';
+        applyAuthState(true);
       }
     });
   }
@@ -210,6 +211,7 @@ const signinBtn = document.getElementById('auth-signin-btn');
         username.value = '';
         password.value = '';
         setStatus('Account created. Welcome!', false);
+        applyAuthState(true);
       }
     });
   }

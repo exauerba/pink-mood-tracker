@@ -545,6 +545,8 @@ main {
   backdrop-filter: blur(2px);
 }
 
+.auth-screen.hidden { display: none; }
+
 .auth-card {
   background: var(--card);
   border-radius: var(--radius);

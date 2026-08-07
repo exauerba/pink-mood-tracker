@@ -15,6 +15,7 @@
   const NEAR_ZERO = 0.1;
   const MIN_HELPED_DAYS = 3;
   const MIN_PAIRED_DAYS = 5;
+  const MAX_TRACKERS = 10;
 
   /* All dates in the range with entries, sorted ascending. */
   function rangeDays(from, to) {
@@ -146,6 +147,44 @@
       return;
     }
 
+    // Limit the table to MAX_TRACKERS. Prefer trackers with the most data;
+    // when more than MAX_TRACKERS have data, pick the ones with the
+    // strongest correlations instead.
+    let shown = series;
+    if (series.length > MAX_TRACKERS) {
+      const strength = new Map();
+      series.forEach((s) => strength.set(s.id, 0));
+      for (let i = 0; i < series.length; i++) {
+        for (let j = i + 1; j < series.length; j++) {
+          const a = series[i];
+          const b = series[j];
+          const paired = [];
+          a.days.forEach((val, day) => {
+            if (b.days.has(day)) paired.push([val, b.days.get(day)]);
+          });
+          if (paired.length < MIN_PAIRED_DAYS) continue;
+          const rho = Math.abs(
+            spearman(
+              paired.map((p) => p[0]),
+              paired.map((p) => p[1])
+            )
+          );
+          if (rho > strength.get(a.id)) strength.set(a.id, rho);
+          if (rho > strength.get(b.id)) strength.set(b.id, rho);
+        }
+      }
+      shown = series
+        .slice()
+        .sort(
+          (x, y) =>
+            strength.get(y.id) - strength.get(x.id) ||
+            y.days.size - x.days.size
+        )
+        .slice(0, MAX_TRACKERS);
+    } else {
+      shown = series.slice().sort((x, y) => y.days.size - x.days.size);
+    }
+
     const table = document.createElement('table');
     table.className = 'corr-table';
 
@@ -154,7 +193,7 @@
     const corner = document.createElement('th');
     corner.textContent = '';
     headRow.appendChild(corner);
-    series.forEach((s) => {
+    shown.forEach((s) => {
       const th = document.createElement('th');
       th.textContent = s.name;
       headRow.appendChild(th);
@@ -163,7 +202,7 @@
     table.appendChild(thead);
 
     const tbody = document.createElement('tbody');
-    series.forEach((sa) => {
+    shown.forEach((sa) => {
       const tr = document.createElement('tr');
 
       const label = document.createElement('td');
@@ -171,7 +210,7 @@
       label.textContent = sa.name;
       tr.appendChild(label);
 
-      series.forEach((sb) => {
+      shown.forEach((sb) => {
         const td = document.createElement('td');
         td.className = 'corr-cell';
 

@@ -124,6 +124,18 @@ function setStatus(text, isError) {
   status.style.color = isError ? '#c0392b' : 'var(--text-soft)';
 }
 
+// Show a red warning under the username field and restate the rules.
+function setUsernameError(show) {
+  const input = document.getElementById('auth-username');
+  const error = document.getElementById('auth-username-error');
+  if (!input || !error) return;
+  input.classList.toggle('invalid', show);
+  error.classList.toggle('hidden', !show);
+  if (show) {
+    error.textContent = 'Usernames can only use letters, numbers, dots, and dashes. No spaces.';
+  }
+}
+
 document.addEventListener('DOMContentLoaded', async () => {
 const signinBtn = document.getElementById('auth-signin-btn');
   const signupBtn = document.getElementById('auth-signup-btn');
@@ -154,6 +166,12 @@ const signinBtn = document.getElementById('auth-signin-btn');
         setStatus('Please enter your username and password.', true);
         return;
       }
+      if (!USERNAME_RE.test(username.value)) {
+        setUsernameError(true);
+        setStatus('', false);
+        return;
+      }
+      setUsernameError(false);
       signinBtn.disabled = true;
       setStatus('Signing in…', false);
       const res = await window.bloomAuth.signIn(username.value, password.value);
@@ -173,6 +191,12 @@ const signinBtn = document.getElementById('auth-signin-btn');
         setStatus('Please enter your username and password.', true);
         return;
       }
+      if (!USERNAME_RE.test(username.value)) {
+        setUsernameError(true);
+        setStatus('', false);
+        return;
+      }
+      setUsernameError(false);
       signupBtn.disabled = true;
       setStatus('Creating account…', false);
       const res = await window.bloomAuth.signUp(username.value, password.value);
@@ -185,6 +209,18 @@ const signinBtn = document.getElementById('auth-signin-btn');
         username.value = '';
         password.value = '';
         setStatus('Account created. Welcome!', false);
+      }
+    });
+  }
+
+  // Live feedback: show the red warning as soon as the username is invalid.
+  if (username) {
+    username.addEventListener('input', () => {
+      const value = username.value.trim();
+      if (value && !USERNAME_RE.test(value)) {
+        setUsernameError(true);
+      } else {
+        setUsernameError(false);
       }
     });
   }

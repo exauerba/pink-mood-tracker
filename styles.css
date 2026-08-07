@@ -584,6 +584,18 @@ main {
 
 .auth-input:focus { outline: none; border-color: var(--pink-400); }
 
+.auth-input.invalid { border-color: #c0392b; }
+
+.auth-field-error {
+  color: #c0392b;
+  font-size: 0.8rem;
+  font-weight: 700;
+  text-align: center;
+  margin-top: -4px;
+}
+
+.auth-field-error.hidden { display: none; }
+
 .auth-signup-btn {
   border: none;
   background: var(--pink-100);

@@ -9,25 +9,55 @@ let trendChart = null;
 let selectedForViz = new Set();
 let vizInitialized = false;
 
-/* Draws a small rose dot above each point whose raw data carries a note. */
-const noteMarkerPlugin = {
-  id: 'noteMarker',
+/* Draws a shaded "normal" band (mean ± 1 SD of all raw values in range)
+ * behind the lines, so a single bad day reads as noise, not crisis. */
+const normalBandPlugin = {
+  id: 'normalBand',
+  beforeDatasetsDraw(chart) {
+    const { ctx, chartArea, scales } = chart;
+    if (!chartArea || !scales.y) return;
+    const band = chart.options.plugins.normalBand;
+    if (!band) return;
+    const yTop = scales.y.getPixelForValue(band.hi);
+    const yBottom = scales.y.getPixelForValue(band.lo);
+    ctx.save();
+    ctx.fillStyle = band.color;
+    ctx.fillRect(chartArea.left, yTop, chartArea.right - chartArea.left, yBottom - yTop);
+    ctx.restore();
+  },
+};
+
+/* Draws the raw check-in dots in a light color, plus a small rose dot
+   above any raw point whose check-in carries a note. */
+const rawDotsPlugin = {
+  id: 'rawDots',
   afterDatasetsDraw(chart) {
-    const ctx = chart.ctx;
-    chart.data.datasets.forEach((ds, i) => {
-      const meta = chart.getDatasetMeta(i);
-      if (!meta || !meta.data) return;
-      meta.data.forEach((el) => {
-        const raw = el.$context && el.$context.raw;
-        if (raw && typeof raw.note === 'string' && raw.note.trim()) {
-          ctx.save();
+    const { ctx, chartArea, scales } = chart;
+    if (!chartArea) return;
+    chart.data.datasets.forEach((ds) => {
+      if (!ds.raw || !ds.raw.length) return;
+      const color = ds.borderColor;
+      ctx.save();
+      ctx.fillStyle = color + '33';
+      ctx.strokeStyle = color + '55';
+      ctx.lineWidth = 1;
+      ds.raw.forEach((p) => {
+        const x = scales.x.getPixelForValue(p.x);
+        const y = scales.y.getPixelForValue(p.y);
+        if (x < chartArea.left || x > chartArea.right) return;
+        ctx.beginPath();
+        ctx.arc(x, y, 2.5, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.stroke();
+        if (p.note) {
           ctx.fillStyle = '#be185d';
           ctx.beginPath();
-          ctx.arc(el.x, el.y - 10, 3, 0, Math.PI * 2);
+          ctx.arc(x, y - 9, 3, 0, Math.PI * 2);
           ctx.fill();
-          ctx.restore();
+          ctx.fillStyle = color + '33';
         }
       });
+      ctx.restore();
     });
   },
 };
@@ -113,6 +143,51 @@ function collectPoints(trackerId, from, to) {
   return pts;
 }
 
+/* 7-day trailing average of a tracker's daily means, as {x, y} points.
+ * Skips days with no rating; needs at least 3 rated days in the window. */
+function rollingAverage(trackerId, from, to) {
+  const days = Object.keys(entries)
+    .filter((d) => d >= from && d <= to)
+    .sort();
+  const daily = []; // { day, mean }
+  days.forEach((d) => {
+    let sum = 0;
+    let count = 0;
+    (entries[d] || []).forEach((e) => {
+      const v = e.ratings[trackerId];
+      if (typeof v === 'number') {
+        sum += v;
+        count++;
+      }
+    });
+    if (count > 0) daily.push({ day: d, mean: sum / count });
+  });
+
+  const out = [];
+  for (let i = 0; i < daily.length; i++) {
+    const window = daily.slice(Math.max(0, i - 6), i + 1);
+    if (window.length < 3) continue;
+    const avg = window.reduce((s, w) => s + w.mean, 0) / window.length;
+    out.push({ x: `${daily[i].day}T00:00`, y: Math.round(avg * 100) / 100 });
+  }
+  return out;
+}
+
+/* Mean ± 1 SD across every raw rating in range, clamped to the 1-7 scale. */
+function normalBand(selectedTrackers, from, to) {
+  const all = [];
+  selectedTrackers.forEach((t) => {
+    collectPoints(t.id, from, to).forEach((p) => all.push(p.y));
+  });
+  if (all.length < 5) return null;
+  const mean = all.reduce((s, v) => s + v, 0) / all.length;
+  const sd = Math.sqrt(all.reduce((s, v) => s + (v - mean) ** 2, 0) / all.length);
+  return {
+    lo: Math.max(1, mean - sd),
+    hi: Math.min(7, mean + sd),
+  };
+}
+
 function renderChart() {
   const from = document.getElementById('viz-from').value;
   const to = document.getElementById('viz-to').value;
@@ -129,30 +204,44 @@ function renderChart() {
   if (trendChart) { trendChart.destroy(); trendChart = null; }
   if (!hasData) return;
 
+  const band = normalBand(selectedTrackers, from, to);
+
   const datasets = selectedTrackers.map((t) => {
     const color = colorForTracker(t);
     return {
       label: t.name,
-      data: collectPoints(t.id, from, to),
+      data: rollingAverage(t.id, from, to),
+      raw: collectPoints(t.id, from, to),
       borderColor: color,
       backgroundColor: color + '22',
-      borderWidth: 3,
-      pointRadius: 4,
-      pointHoverRadius: 6,
-      spanGaps: false,
-      tension: 0.3,
+      borderWidth: 2.5,
+      pointRadius: 0,
+      pointHoverRadius: 0,
+      spanGaps: true,
+      tension: 0.4,
     };
   });
 
   trendChart = new Chart(canvas, {
     type: 'line',
     data: { datasets },
-    plugins: [noteMarkerPlugin],
+    plugins: [normalBandPlugin, rawDotsPlugin],
     options: {
       responsive: true,
       maintainAspectRatio: false,
       plugins: {
-        legend: { labels: { font: { family: 'Nunito', weight: 700 }, color: '#5b3a4a' } },
+        normalBand: band
+          ? { lo: band.lo, hi: band.hi, color: 'rgba(244,114,182,0.10)' }
+          : null,
+        legend: {
+          labels: {
+            font: { family: 'Nunito', weight: 700, size: 11 },
+            color: '#5b3a4a',
+            boxWidth: 12,
+            boxHeight: 12,
+            padding: 8,
+          },
+        },
         tooltip: {
           titleFont: { family: 'Nunito', weight: 700 },
           callbacks: {

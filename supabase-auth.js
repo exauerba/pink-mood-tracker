@@ -13,10 +13,10 @@ const isConfigured = () =>
 
 const configured = () => isConfigured() && window.supabase;
 
-let supabase = null;
+let client = null;
 
 if (configured()) {
-  supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+  client = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 }
 
 function notConfiguredError() {
@@ -50,7 +50,7 @@ const auth = {
     if (!configured()) return notConfiguredError();
     if (!USERNAME_RE.test(username)) return usernameError();
     try {
-      const { data, error } = await supabase.auth.signUp({ email: usernameToEmail(username), password });
+      const { data, error } = await client.auth.signUp({ email: usernameToEmail(username), password });
       if (error) return { error: friendlyError(error.message) };
       return { user: data.user };
     } catch (e) {
@@ -62,7 +62,7 @@ const auth = {
     if (!configured()) return notConfiguredError();
     if (!USERNAME_RE.test(username)) return usernameError();
     try {
-      const { data, error } = await supabase.auth.signInWithPassword({ email: usernameToEmail(username), password });
+      const { data, error } = await client.auth.signInWithPassword({ email: usernameToEmail(username), password });
       if (error) return { error: friendlyError(error.message) };
       return { user: data.user };
     } catch (e) {
@@ -73,7 +73,7 @@ const auth = {
   async signOut() {
     if (!configured()) return notConfiguredError();
     try {
-      const { error } = await supabase.auth.signOut();
+      const { error } = await client.auth.signOut();
       if (error) return { error: friendlyError(error.message) };
       return { user: null };
     } catch (e) {
@@ -84,7 +84,7 @@ const auth = {
   async getSession() {
     if (!configured()) return { error: 'Supabase is not configured yet.' };
     try {
-      const { data, error } = await supabase.auth.getSession();
+      const { data, error } = await client.auth.getSession();
       if (error) return { error: friendlyError(error.message) };
       return { session: data.session };
     } catch (e) {
@@ -97,7 +97,7 @@ const auth = {
       callback({ event: 'SIGNED_OUT', session: null });
       return () => {};
     }
-    return supabase.auth.onAuthStateChange((event, session) => callback({ event, session }));
+    return client.auth.onAuthStateChange((event, session) => callback({ event, session }));
   },
 };
 

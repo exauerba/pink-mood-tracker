@@ -9,6 +9,21 @@ let trendChart = null;
 let selectedForViz = new Set();
 let vizInitialized = false;
 
+/* Trackers where a HIGHER rating is worse (e.g. anxiety). These are
+ * plotted inverted (8 - y) so every line going up means "better".
+ * Custom trackers default to "up = better". */
+const BAD_DIRECTION = new Set([
+  'anxiety', 'panic-sensations', 'panic', 'sadness', 'irritability',
+  'stress-level', 'guilt', 'overthinking', 'low-mood', 'cravings',
+  'craving', 'urges', 'hyperfocus-pull',
+]);
+
+/* Default selection on first visit: a small mix of good/bad lines. */
+const DEFAULT_VIZ_IDS = ['anxiety', 'sleep-quality', 'energy', 'coping-skill-use', 'mood'];
+
+function isFlipped(t) { return BAD_DIRECTION.has(t.id); }
+function flipValue(v) { return 8 - v; }
+
 /* Draws a shaded "normal" band (mean ± 1 SD of all raw values in range)
  * behind the lines, so a single bad day reads as noise, not crisis. */
 const normalBandPlugin = {
@@ -74,9 +89,11 @@ function buildPills() {
   const wrap = document.getElementById('viz-tracker-pills');
   wrap.innerHTML = '';
 
-  // default: everything selected on first visit
+  // default: a small curated set on first visit
   if (!vizInitialized) {
-    trackers.forEach((t) => selectedForViz.add(t.id));
+    DEFAULT_VIZ_IDS.forEach((id) => {
+      if (trackers.some((t) => t.id === id)) selectedForViz.add(id);
+    });
     vizInitialized = true;
   }
 
@@ -123,8 +140,12 @@ function buildDateRange() {
   to.addEventListener('change', renderVisualize);
 }
 
-/* Collect {x: date+time, y: rating} points for one tracker in range. */
+/* Collect {x: date+time, y: rating} points for one tracker in range.
+ * "Bad" trackers are inverted (8 - y) so up always means better;
+ * the original rating is kept as `orig` for tooltips. */
 function collectPoints(trackerId, from, to) {
+  const t = trackers.find((x) => x.id === trackerId);
+  const flipped = t && isFlipped(t);
   const pts = [];
   Object.keys(entries)
     .filter((d) => d >= from && d <= to)
@@ -134,6 +155,7 @@ function collectPoints(trackerId, from, to) {
         const y = e.ratings[trackerId];
         if (typeof y === 'number') {
           const pt = { x: `${d}T${e.time || '12:00'}`, y };
+          if (flipped) { pt.orig = y; pt.y = flipValue(y); }
           if (typeof e.note === 'string' && e.note.trim()) pt.note = e.note;
           pts.push(pt);
         }
@@ -144,8 +166,11 @@ function collectPoints(trackerId, from, to) {
 }
 
 /* 7-day trailing average of a tracker's daily means, as {x, y} points.
- * Skips days with no rating; needs at least 3 rated days in the window. */
+ * Skips days with no rating; needs at least 3 rated days in the window.
+ * Flipped for "bad" trackers (8 - y) so up means better, `orig` kept. */
 function rollingAverage(trackerId, from, to) {
+  const t = trackers.find((x) => x.id === trackerId);
+  const flipped = t && isFlipped(t);
   const days = Object.keys(entries)
     .filter((d) => d >= from && d <= to)
     .sort();
@@ -168,7 +193,9 @@ function rollingAverage(trackerId, from, to) {
     const window = daily.slice(Math.max(0, i - 6), i + 1);
     if (window.length < 3) continue;
     const avg = window.reduce((s, w) => s + w.mean, 0) / window.length;
-    out.push({ x: `${daily[i].day}T00:00`, y: Math.round(avg * 100) / 100 });
+    const pt = { x: `${daily[i].day}T00:00`, y: Math.round(avg * 100) / 100 };
+    if (flipped) { pt.orig = pt.y; pt.y = Math.round(flipValue(avg) * 100) / 100; }
+    out.push(pt);
   }
   return out;
 }
@@ -208,8 +235,9 @@ function renderChart() {
 
   const datasets = selectedTrackers.map((t) => {
     const color = colorForTracker(t);
+    const flipped = isFlipped(t);
     return {
-      label: t.name,
+      label: t.name + (flipped ? ' ↺' : ''),
       data: rollingAverage(t.id, from, to),
       raw: collectPoints(t.id, from, to),
       borderColor: color,
@@ -247,7 +275,8 @@ function renderChart() {
           callbacks: {
             label(context) {
               const raw = context.raw;
-              const label = raw ? String(raw.y) : '';
+              // Flipped trackers plot 8 - rating; show the real rating.
+              const label = raw ? String(raw.orig !== undefined ? raw.orig : raw.y) : '';
               if (raw && typeof raw.note === 'string' && raw.note.trim()) {
                 return [label, `Note: ${raw.note}`];
               }

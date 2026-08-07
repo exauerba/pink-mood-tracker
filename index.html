@@ -97,7 +97,11 @@
       <div class="backup-card">
         <h3 class="checkin-title">Back up your data</h3>
         <p class="hint">Download all your check-ins as a file. Keep it somewhere safe, like your Documents or a cloud drive.</p>
-        <button id="export-btn" class="save-btn">Export data</button>
+        <div class="backup-actions">
+          <button id="export-btn" class="save-btn">Export data</button>
+          <button id="import-btn" class="save-btn">Import data</button>
+        </div>
+        <input type="file" id="import-file" accept="application/json,.json" hidden>
         <p id="export-status" class="save-status"></p>
       </div>
     </section>

@@ -513,3 +513,5 @@ main {
 }
 
 .backup-card .hint { margin-bottom: 14px; }
+.backup-actions { display: flex; gap: 12px; }
+.backup-actions .save-btn { width: auto; flex: 1; padding: 12px 16px; }

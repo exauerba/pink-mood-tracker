@@ -507,6 +507,41 @@ function exportData() {
   setTimeout(() => { status.textContent = ''; }, 3000);
 }
 
+/* ---------- Import ---------- */
+
+document.getElementById('import-btn').addEventListener('click', () => {
+  document.getElementById('import-file').click();
+});
+
+document.getElementById('import-file').addEventListener('change', (e) => {
+  const file = e.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = () => {
+    try {
+      const data = JSON.parse(reader.result);
+      if (!Array.isArray(data.trackers) || typeof data.entries !== 'object') {
+        throw new Error('bad shape');
+      }
+      trackers = data.trackers;
+      entries = migrate(data.entries);
+      saveTrackers(trackers);
+      saveEntries(entries);
+      renderTrack();
+      renderManage();
+      const status = document.getElementById('export-status');
+      status.textContent = 'Imported 🌸';
+      setTimeout(() => { status.textContent = ''; }, 3000);
+    } catch (err) {
+      const status = document.getElementById('export-status');
+      status.textContent = 'That file did not work. Try your bloom backup file.';
+      setTimeout(() => { status.textContent = ''; }, 4000);
+    }
+  };
+  reader.readAsText(file);
+  e.target.value = '';
+});
+
 /* ---------- Init ---------- */
 
 renderTrack();

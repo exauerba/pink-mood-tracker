@@ -9,10 +9,35 @@ let trendChart = null;
 let selectedForViz = new Set();
 let vizInitialized = false;
 
+/* Draws a small rose dot above each point whose raw data carries a note. */
+const noteMarkerPlugin = {
+  id: 'noteMarker',
+  afterDatasetsDraw(chart) {
+    const ctx = chart.ctx;
+    chart.data.datasets.forEach((ds, i) => {
+      const meta = chart.getDatasetMeta(i);
+      if (!meta || !meta.data) return;
+      meta.data.forEach((el) => {
+        const raw = el.$context && el.$context.raw;
+        if (raw && typeof raw.note === 'string' && raw.note.trim()) {
+          ctx.save();
+          ctx.fillStyle = '#be185d';
+          ctx.beginPath();
+          ctx.arc(el.x, el.y - 10, 3, 0, Math.PI * 2);
+          ctx.fill();
+          ctx.restore();
+        }
+      });
+    });
+  },
+};
+
 function renderVisualize() {
   buildPills();
   buildDateRange();
   renderChart();
+  if (window.vizTime) window.vizTime.render();
+  if (window.vizInsights) window.vizInsights.render();
 }
 
 function buildPills() {
@@ -64,8 +89,8 @@ function buildDateRange() {
   if (!from.value) from.value = shiftDate(todayISO(), -30); // last 30 days default
   if (!to.value) to.value = todayISO();
 
-  from.addEventListener('change', renderChart);
-  to.addEventListener('change', renderChart);
+  from.addEventListener('change', renderVisualize);
+  to.addEventListener('change', renderVisualize);
 }
 
 /* Collect {x: date+time, y: rating} points for one tracker in range. */
@@ -78,7 +103,9 @@ function collectPoints(trackerId, from, to) {
       (entries[d] || []).forEach((e) => {
         const y = e.ratings[trackerId];
         if (typeof y === 'number') {
-          pts.push({ x: `${d}T${e.time || '12:00'}`, y });
+          const pt = { x: `${d}T${e.time || '12:00'}`, y };
+          if (typeof e.note === 'string' && e.note.trim()) pt.note = e.note;
+          pts.push(pt);
         }
       });
     });
@@ -120,12 +147,25 @@ function renderChart() {
   trendChart = new Chart(canvas, {
     type: 'line',
     data: { datasets },
+    plugins: [noteMarkerPlugin],
     options: {
       responsive: true,
       maintainAspectRatio: false,
       plugins: {
         legend: { labels: { font: { family: 'Nunito', weight: 700 }, color: '#5b3a4a' } },
-        tooltip: { titleFont: { family: 'Nunito', weight: 700 } },
+        tooltip: {
+          titleFont: { family: 'Nunito', weight: 700 },
+          callbacks: {
+            label(context) {
+              const raw = context.raw;
+              const label = raw ? String(raw.y) : '';
+              if (raw && typeof raw.note === 'string' && raw.note.trim()) {
+                return [label, `Note: ${raw.note}`];
+              }
+              return label;
+            },
+          },
+        },
       },
       scales: {
         y: {

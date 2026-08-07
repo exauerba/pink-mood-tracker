@@ -612,3 +612,10 @@ main {
   color: var(--text-soft);
   font-size: 0.85rem;
 }
+
+.auth-rule {
+  text-align: center;
+  color: var(--text-soft);
+  font-size: 0.8rem;
+  margin-top: -4px;
+}

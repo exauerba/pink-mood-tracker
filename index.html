@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>bloom — mood & symptom tracker</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles.css">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns@3.0.0/dist/chartjs-adapter-date-fns.bundle.min.js"></script>
+</head>
+<body>
+  <header class="app-header">
+    <h1 class="logo">🌸 bloom</h1>
+    <nav class="tabs" id="tabs">
+      <button class="tab active" data-view="track">Track</button>
+      <button class="tab" data-view="visualize">Visualize</button>
+      <button class="tab" data-view="manage">Manage</button>
+    </nav>
+  </header>
+
+  <main>
+    <!-- ============ TRACK VIEW ============ -->
+    <section id="view-track" class="view active">
+      <div class="date-nav">
+        <button id="prev-day" class="icon-btn" title="Previous day">←</button>
+        <h2 id="track-date" class="section-title"></h2>
+        <button id="next-day" class="icon-btn" title="Next day">→</button>
+      </div>
+
+      <div id="entry-list" class="tracker-list"></div>
+
+      <div class="checkin-card">
+        <h3 id="checkin-title" class="checkin-title">New check-in</h3>
+        <div class="time-row">
+          <label for="entry-time">Time</label>
+          <input type="time" id="entry-time">
+        </div>
+        <div id="tracker-list" class="tracker-list"></div>
+        <div class="note-card">
+          <label for="daily-note">Notes</label>
+          <textarea id="daily-note" rows="3" placeholder="How does it feel right now?"></textarea>
+        </div>
+        <button id="save-btn" class="save-btn">Save check-in</button>
+        <button id="cancel-edit" class="cancel-btn hidden">Cancel</button>
+        <p id="save-status" class="save-status"></p>
+      </div>
+    </section>
+
+    <!-- ============ VISUALIZE VIEW ============ -->
+    <section id="view-visualize" class="view">
+      <h2 class="section-title">Your patterns</h2>
+
+      <div class="viz-controls">
+        <div class="control-group">
+          <label>Trackers</label>
+          <div id="viz-tracker-pills" class="pill-wrap"></div>
+        </div>
+        <div class="control-group">
+          <label>From</label>
+          <input type="date" id="viz-from">
+        </div>
+        <div class="control-group">
+          <label>To</label>
+          <input type="date" id="viz-to">
+        </div>
+      </div>
+
+      <div class="chart-card">
+        <canvas id="trend-chart"></canvas>
+      </div>
+      <p id="viz-empty" class="empty-msg hidden">No data yet — save a few days in the Track view and your patterns will bloom here.</p>
+    </section>
+
+    <!-- ============ MANAGE VIEW ============ -->
+    <section id="view-manage" class="view">
+      <h2 class="section-title">What you track</h2>
+      <p class="hint">Add, rename, or remove the things you check in on. Each is rated on a 1–7 scale.</p>
+
+      <div id="tracker-list-manage" class="tracker-list"></div>
+
+      <div class="add-row">
+        <input type="text" id="new-tracker-name" placeholder="New tracker name…" maxlength="40">
+        <select id="new-tracker-group" class="group-select">
+          <option value="emotional">Emotional states</option>
+          <option value="physical">Physical &amp; sleep</option>
+          <option value="mind">Mind &amp; focus</option>
+          <option value="coping">Coping &amp; connection</option>
+          <option value="craving">Craving</option>
+          <option value="other">Other</option>
+        </select>
+        <button id="add-tracker-btn" class="save-btn">Add</button>
+      </div>
+
+      <div class="backup-card">
+        <h3 class="checkin-title">Back up your data</h3>
+        <p class="hint">Download all your check-ins as a file. Keep it somewhere safe, like your Documents or a cloud drive.</p>
+        <button id="export-btn" class="save-btn">Export data</button>
+        <p id="export-status" class="save-status"></p>
+      </div>
+    </section>
+  </main>
+
+  <script src="app.js"></script>
+  <script src="charts.js"></script>
+</body>
+</html>

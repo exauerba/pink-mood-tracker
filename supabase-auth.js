@@ -303,10 +303,13 @@ const signinBtn = document.getElementById('auth-signin-btn');
     });
   }
 
-  window.bloomAuth.onAuthChange(async ({ event, session }) => {
-    await applyAuthState(!!session);
-  });
+  // Always start at the login screen. Do not auto-login from a saved session.
+  showAuth();
 
-  const session = await window.bloomAuth.getSession();
-  await applyAuthState(!!session);
+  // Only react to real sign-in / sign-out events, not the initial session.
+  window.bloomAuth.onAuthChange(async ({ event, session }) => {
+    if (event === 'SIGNED_IN' || event === 'SIGNED_OUT') {
+      await applyAuthState(!!session);
+    }
+  });
 });

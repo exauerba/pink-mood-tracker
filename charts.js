@@ -9,19 +9,10 @@ let trendChart = null;
 let selectedForViz = new Set();
 let vizInitialized = false;
 
-/* Trackers where a HIGHER rating is worse (e.g. anxiety). These are
- * plotted inverted (8 - y) so every line going up means "better".
- * Custom trackers default to "up = better". */
-const BAD_DIRECTION = new Set([
-  'anxiety', 'panic-sensations', 'panic', 'sadness', 'irritability',
-  'stress-level', 'guilt', 'overthinking', 'low-mood', 'cravings',
-  'craving', 'urges', 'hyperfocus-pull',
-]);
-
 /* Default selection on first visit: a small mix of good/bad lines. */
 const DEFAULT_VIZ_IDS = ['anxiety', 'sleep-quality', 'energy', 'coping-skill-use', 'mood'];
 
-function isFlipped(t) { return BAD_DIRECTION.has(t.id); }
+function isFlipped(t) { return t.direction === 'bad'; }
 function flipValue(v) { return 8 - v; }
 
 /* Draws a shaded "normal" band (mean ± 1 SD of all raw values in range)

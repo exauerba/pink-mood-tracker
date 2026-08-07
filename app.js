@@ -19,22 +19,31 @@ const GROUPS = {
 };
 
 const DEFAULT_TRACKERS = [
-  { name: 'Anxiety', group: 'emotional' },
-  { name: 'Low mood', group: 'emotional' },
-  { name: 'Irritability', group: 'emotional' },
-  { name: 'Panic', group: 'emotional' },
-  { name: 'Sleep quality', group: 'physical' },
-  { name: 'Energy', group: 'physical' },
-  { name: 'Concentration', group: 'mind' },
-  { name: 'Overthinking', group: 'mind' },
-  { name: 'Coping skill use', group: 'coping' },
-  { name: 'Cravings', group: 'craving' },
+  { name: 'Anxiety', group: 'emotional', direction: 'bad' },
+  { name: 'Low mood', group: 'emotional', direction: 'bad' },
+  { name: 'Irritability', group: 'emotional', direction: 'bad' },
+  { name: 'Panic', group: 'emotional', direction: 'bad' },
+  { name: 'Sleep quality', group: 'physical', direction: 'good' },
+  { name: 'Energy', group: 'physical', direction: 'good' },
+  { name: 'Concentration', group: 'mind', direction: 'good' },
+  { name: 'Overthinking', group: 'mind', direction: 'bad' },
+  { name: 'Coping skill use', group: 'coping', direction: 'good' },
+  { name: 'Cravings', group: 'craving', direction: 'bad' },
 ];
+
+// Direction for older trackers not covered by the defaults. Keyed by id
+// because renameTracker only changes t.name, so ids stay stable.
+const DIRECTION_BY_ID = {
+  'anxiety': 'bad', 'panic-sensations': 'bad', 'panic': 'bad', 'sadness': 'bad',
+  'irritability': 'bad', 'stress-level': 'bad', 'guilt': 'bad', 'overthinking': 'bad',
+  'low-mood': 'bad', 'cravings': 'bad', 'craving': 'bad', 'urges': 'bad',
+  'hyperfocus-pull': 'bad',
+};
 
 /* ---------- Storage layer ---------- */
 
 function loadTrackers() {
-  const defaults = DEFAULT_TRACKERS.map((d) => ({ id: slug(d.name), name: d.name, group: d.group }));
+  const defaults = DEFAULT_TRACKERS.map((d) => ({ id: slug(d.name), name: d.name, group: d.group, direction: d.direction || 'good' }));
   const raw = localStorage.getItem(STORE_TRACKERS);
   let saved = [];
   if (raw) {
@@ -46,6 +55,10 @@ function loadTrackers() {
   let backfilled = false;
   saved.forEach((t) => {
     if (!t.group) { t.group = groupByName[t.name] || 'other'; backfilled = true; }
+  });
+  // Backfill direction for any saved tracker that predates it.
+  saved.forEach((t) => {
+    if (!t.direction) { t.direction = DIRECTION_BY_ID[t.id] || 'good'; backfilled = true; }
   });
   // Merge: keep saved trackers, append any new defaults not already present.
   const ids = new Set(saved.map((t) => t.id));
@@ -438,6 +451,20 @@ function renderManage() {
       delBtn.textContent = 'Remove';
       delBtn.addEventListener('click', () => removeTracker(idx));
 
+      const toggle = document.createElement('label');
+      toggle.className = 'direction-toggle';
+      const checkbox = document.createElement('input');
+      checkbox.type = 'checkbox';
+      checkbox.checked = t.direction === 'bad';
+      checkbox.addEventListener('change', () => {
+        t.direction = checkbox.checked ? 'bad' : 'good';
+        saveTrackers(trackers);
+        renderManage();
+      });
+      toggle.appendChild(checkbox);
+      toggle.appendChild(document.createTextNode('Higher = worse'));
+
+      actions.appendChild(toggle);
       actions.appendChild(renameBtn);
       actions.appendChild(delBtn);
       card.appendChild(name);
@@ -473,7 +500,7 @@ document.getElementById('add-tracker-btn').addEventListener('click', () => {
   const name = input.value.trim();
   if (!name) return;
   const group = document.getElementById('new-tracker-group').value;
-  trackers.push({ id: slug(name), name, group });
+  trackers.push({ id: slug(name), name, group, direction: 'good' });
   saveTrackers(trackers);
   input.value = '';
   renderManage();
@@ -608,6 +635,11 @@ window.bloomApp = {
   loadLocalData(newTrackers, newEntries) {
     syncing = true;
     trackers = newTrackers;
+    // Cloud rows may be missing direction (migrated rows default to 'good');
+    // correct known-bad ones before persisting locally.
+    newTrackers.forEach((t) => {
+      if (!t.direction) t.direction = DIRECTION_BY_ID[t.id] || 'good';
+    });
     entries = newEntries;
     localStorage.setItem(STORE_TRACKERS, JSON.stringify(trackers));
     localStorage.setItem(STORE_ENTRIES, JSON.stringify(entries));

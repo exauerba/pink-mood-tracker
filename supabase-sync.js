@@ -42,6 +42,7 @@ async function pull() {
       id: t.id,
       name: t.name,
       group: t.group,
+      direction: t.direction || 'good',
     }));
 
     const cloudEntries = {};
@@ -60,7 +61,7 @@ async function pull() {
 async function pushTrackers(trackers) {
   const user = await currentUser();
   if (!user) return;
-  const rows = trackers.map((t) => ({ user_id: user.id, id: t.id, name: t.name, group: t.group }));
+  const rows = trackers.map((t) => ({ user_id: user.id, id: t.id, name: t.name, group: t.group, direction: t.direction || 'good' }));
   const { error } = await window.bloomClient.from('trackers').upsert(rows, { onConflict: 'user_id,id' });
   if (error) return { error };
 

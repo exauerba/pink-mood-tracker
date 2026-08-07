@@ -551,7 +551,31 @@ main {
 
 .tracker-card.manage .tracker-name { margin: 0; }
 
-.manage-actions { display: flex; gap: 8px; }
+.manage-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.direction-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 0.78rem;
+  font-weight: 700;
+  color: var(--text-soft);
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.direction-toggle input {
+  width: 15px;
+  height: 15px;
+  margin: 0;
+  cursor: pointer;
+  accent-color: var(--pink-500);
+}
 
 .mini-btn {
   border: none;

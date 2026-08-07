@@ -62,7 +62,25 @@ async function pushTrackers(trackers) {
   if (!user) return;
   const rows = trackers.map((t) => ({ user_id: user.id, id: t.id, name: t.name, group: t.group }));
   const { error } = await window.bloomClient.from('trackers').upsert(rows, { onConflict: 'user_id,id' });
-  return error ? { error } : { ok: true };
+  if (error) return { error };
+
+  // Remove cloud trackers that no longer exist locally (renamed or deleted).
+  const localIds = trackers.map((t) => t.id);
+  const { data: existing, error: listError } = await window.bloomClient
+    .from('trackers')
+    .select('id')
+    .eq('user_id', user.id);
+  if (listError) return { error: listError };
+  const stale = (existing || []).filter((r) => !localIds.includes(r.id)).map((r) => r.id);
+  if (stale.length > 0) {
+    const { error: delError } = await window.bloomClient
+      .from('trackers')
+      .delete()
+      .eq('user_id', user.id)
+      .in('id', stale);
+    if (delError) return { error: delError };
+  }
+  return { ok: true };
 }
 
 async function pushEntries(entries) {

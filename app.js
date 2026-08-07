@@ -454,7 +454,6 @@ function renameTracker(idx) {
   const newName = prompt('Rename "' + t.name + '" to:', t.name);
   if (newName && newName.trim()) {
     t.name = newName.trim();
-    t.id = slug(newName);
     saveTrackers(trackers);
     renderManage();
   }

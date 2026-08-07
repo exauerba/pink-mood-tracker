@@ -3,7 +3,7 @@
  * Strategy: cache-first for app files and CDN assets.
  */
 
-const CACHE = 'bloom-v4';
+const CACHE = 'bloom-v5';
 
 // Files needed to run the app offline.
 const PRECACHE = [
@@ -12,6 +12,8 @@ const PRECACHE = [
   './styles.css',
   './app.js',
   './charts.js',
+  './viz-time.js',
+  './viz-insights.js',
   './supabase-config.js',
   './supabase-auth.js',
   './supabase-sync.js',

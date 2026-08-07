@@ -83,7 +83,26 @@
       <div class="chart-card">
         <canvas id="trend-chart"></canvas>
       </div>
+      <p class="chart-hint">Up always means better — trackers marked ↺ are inverted (e.g. anxiety). Lines show the 7-day average. The shaded band is your typical range — a single day outside it is normal ups and downs, not a trend.</p>
       <p id="viz-empty" class="empty-msg hidden">No data yet — save a few days in the Track view and your patterns will bloom here.</p>
+
+      <div class="chart-card viz-card">
+        <h3 class="viz-card-title">By time of day</h3>
+        <canvas id="time-chart"></canvas>
+        <p id="time-empty" class="empty-msg hidden">Not enough check-ins yet to see time-of-day patterns.</p>
+      </div>
+
+      <div class="viz-card">
+        <h3 class="viz-card-title">What helped</h3>
+        <p id="helped-text" class="helped-text"></p>
+        <p id="helped-empty" class="empty-msg hidden">Not enough data yet to compare coping days.</p>
+      </div>
+
+      <div class="viz-card">
+        <h3 class="viz-card-title">Links between trackers</h3>
+        <div id="corr-wrap"></div>
+        <p class="corr-note">Correlation is not causation. Small samples can mislead. This is your own tracking, not a controlled study.</p>
+      </div>
     </section>
 
     <!-- ============ MANAGE VIEW ============ -->
@@ -128,6 +147,8 @@
 
   <script src="app.js"></script>
   <script src="charts.js"></script>
+  <script src="viz-time.js"></script>
+  <script src="viz-insights.js"></script>
 
   <!-- ============ AUTH SCREEN ============ -->
   <div id="auth-screen" class="auth-screen hidden">

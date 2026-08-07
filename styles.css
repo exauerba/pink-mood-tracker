@@ -457,7 +457,7 @@ main {
   padding: 18px;
   box-shadow: var(--shadow);
   position: relative;
-  height: 400px;
+  height: 460px;
 }
 
 #trend-chart {
@@ -465,8 +465,81 @@ main {
   height: 100%;
 }
 
+.chart-hint {
+  color: var(--text-soft);
+  font-size: 0.8rem;
+  margin-top: 10px;
+  text-align: center;
+}
+
 .empty-msg { text-align: center; color: var(--text-soft); margin-top: 20px; }
 .hidden { display: none; }
+
+.viz-card {
+  background: var(--card);
+  border-radius: var(--radius);
+  padding: 18px;
+  box-shadow: var(--shadow);
+  margin-top: 18px;
+}
+
+.viz-card-title {
+  color: var(--rose-700);
+  font-size: 1.05rem;
+  font-weight: 800;
+  margin-bottom: 12px;
+}
+
+#time-chart {
+  width: 100%;
+  height: 100%;
+}
+
+.helped-text {
+  color: var(--text);
+  font-size: 1rem;
+  font-weight: 700;
+  line-height: 1.5;
+}
+
+.corr-note {
+  color: var(--text-soft);
+  font-size: 0.8rem;
+  margin-top: 12px;
+}
+
+.corr-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.8rem;
+}
+
+.corr-table th,
+.corr-table td {
+  padding: 6px 4px;
+  text-align: center;
+  border: 1px solid var(--pink-100);
+}
+
+.corr-table th {
+  color: var(--rose-700);
+  font-weight: 800;
+  background: var(--pink-50);
+  white-space: nowrap;
+}
+
+.corr-table td.corr-label {
+  color: var(--text);
+  font-weight: 700;
+  text-align: left;
+  white-space: nowrap;
+  background: var(--pink-50);
+}
+
+.corr-cell {
+  font-weight: 700;
+  color: var(--text);
+}
 
 /* ---------- Manage ---------- */
 .tracker-card.manage {
@@ -478,7 +551,31 @@ main {
 
 .tracker-card.manage .tracker-name { margin: 0; }
 
-.manage-actions { display: flex; gap: 8px; }
+.manage-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.direction-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 0.78rem;
+  font-weight: 700;
+  color: var(--text-soft);
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.direction-toggle input {
+  width: 15px;
+  height: 15px;
+  margin: 0;
+  cursor: pointer;
+  accent-color: var(--pink-500);
+}
 
 .mini-btn {
   border: none;

@@ -9,19 +9,82 @@ let trendChart = null;
 let selectedForViz = new Set();
 let vizInitialized = false;
 
+/* Default selection on first visit: a small mix of good/bad lines. */
+const DEFAULT_VIZ_IDS = ['anxiety', 'sleep-quality', 'energy', 'coping-skill-use', 'mood'];
+
+function isFlipped(t) { return t.direction === 'bad'; }
+function flipValue(v) { return 8 - v; }
+
+/* Draws a shaded "normal" band (mean ± 1 SD of all raw values in range)
+ * behind the lines, so a single bad day reads as noise, not crisis. */
+const normalBandPlugin = {
+  id: 'normalBand',
+  beforeDatasetsDraw(chart) {
+    const { ctx, chartArea, scales } = chart;
+    if (!chartArea || !scales.y) return;
+    const band = chart.options.plugins.normalBand;
+    if (!band) return;
+    const yTop = scales.y.getPixelForValue(band.hi);
+    const yBottom = scales.y.getPixelForValue(band.lo);
+    ctx.save();
+    ctx.fillStyle = band.color;
+    ctx.fillRect(chartArea.left, yTop, chartArea.right - chartArea.left, yBottom - yTop);
+    ctx.restore();
+  },
+};
+
+/* Draws the raw check-in dots in a light color, plus a small rose dot
+   above any raw point whose check-in carries a note. */
+const rawDotsPlugin = {
+  id: 'rawDots',
+  afterDatasetsDraw(chart) {
+    const { ctx, chartArea, scales } = chart;
+    if (!chartArea) return;
+    chart.data.datasets.forEach((ds) => {
+      if (!ds.raw || !ds.raw.length) return;
+      const color = ds.borderColor;
+      ctx.save();
+      ctx.fillStyle = color + '33';
+      ctx.strokeStyle = color + '55';
+      ctx.lineWidth = 1;
+      ds.raw.forEach((p) => {
+        const x = scales.x.getPixelForValue(p.x);
+        const y = scales.y.getPixelForValue(p.y);
+        if (x < chartArea.left || x > chartArea.right) return;
+        ctx.beginPath();
+        ctx.arc(x, y, 2.5, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.stroke();
+        if (p.note) {
+          ctx.fillStyle = '#be185d';
+          ctx.beginPath();
+          ctx.arc(x, y - 9, 3, 0, Math.PI * 2);
+          ctx.fill();
+          ctx.fillStyle = color + '33';
+        }
+      });
+      ctx.restore();
+    });
+  },
+};
+
 function renderVisualize() {
   buildPills();
   buildDateRange();
   renderChart();
+  if (window.vizTime) window.vizTime.render();
+  if (window.vizInsights) window.vizInsights.render();
 }
 
 function buildPills() {
   const wrap = document.getElementById('viz-tracker-pills');
   wrap.innerHTML = '';
 
-  // default: everything selected on first visit
+  // default: a small curated set on first visit
   if (!vizInitialized) {
-    trackers.forEach((t) => selectedForViz.add(t.id));
+    DEFAULT_VIZ_IDS.forEach((id) => {
+      if (trackers.some((t) => t.id === id)) selectedForViz.add(id);
+    });
     vizInitialized = true;
   }
 
@@ -64,12 +127,16 @@ function buildDateRange() {
   if (!from.value) from.value = shiftDate(todayISO(), -30); // last 30 days default
   if (!to.value) to.value = todayISO();
 
-  from.addEventListener('change', renderChart);
-  to.addEventListener('change', renderChart);
+  from.addEventListener('change', renderVisualize);
+  to.addEventListener('change', renderVisualize);
 }
 
-/* Collect {x: date+time, y: rating} points for one tracker in range. */
+/* Collect {x: date+time, y: rating} points for one tracker in range.
+ * "Bad" trackers are inverted (8 - y) so up always means better;
+ * the original rating is kept as `orig` for tooltips. */
 function collectPoints(trackerId, from, to) {
+  const t = trackers.find((x) => x.id === trackerId);
+  const flipped = t && isFlipped(t);
   const pts = [];
   Object.keys(entries)
     .filter((d) => d >= from && d <= to)
@@ -78,12 +145,65 @@ function collectPoints(trackerId, from, to) {
       (entries[d] || []).forEach((e) => {
         const y = e.ratings[trackerId];
         if (typeof y === 'number') {
-          pts.push({ x: `${d}T${e.time || '12:00'}`, y });
+          const pt = { x: `${d}T${e.time || '12:00'}`, y };
+          if (flipped) { pt.orig = y; pt.y = flipValue(y); }
+          if (typeof e.note === 'string' && e.note.trim()) pt.note = e.note;
+          pts.push(pt);
         }
       });
     });
   pts.sort((a, b) => a.x.localeCompare(b.x));
   return pts;
+}
+
+/* 7-day trailing average of a tracker's daily means, as {x, y} points.
+ * Skips days with no rating; needs at least 3 rated days in the window.
+ * Flipped for "bad" trackers (8 - y) so up means better, `orig` kept. */
+function rollingAverage(trackerId, from, to) {
+  const t = trackers.find((x) => x.id === trackerId);
+  const flipped = t && isFlipped(t);
+  const days = Object.keys(entries)
+    .filter((d) => d >= from && d <= to)
+    .sort();
+  const daily = []; // { day, mean }
+  days.forEach((d) => {
+    let sum = 0;
+    let count = 0;
+    (entries[d] || []).forEach((e) => {
+      const v = e.ratings[trackerId];
+      if (typeof v === 'number') {
+        sum += v;
+        count++;
+      }
+    });
+    if (count > 0) daily.push({ day: d, mean: sum / count });
+  });
+
+  const out = [];
+  for (let i = 0; i < daily.length; i++) {
+    const window = daily.slice(Math.max(0, i - 6), i + 1);
+    if (window.length < 3) continue;
+    const avg = window.reduce((s, w) => s + w.mean, 0) / window.length;
+    const pt = { x: `${daily[i].day}T00:00`, y: Math.round(avg * 100) / 100 };
+    if (flipped) { pt.orig = pt.y; pt.y = Math.round(flipValue(avg) * 100) / 100; }
+    out.push(pt);
+  }
+  return out;
+}
+
+/* Mean ± 1 SD across every raw rating in range, clamped to the 1-7 scale. */
+function normalBand(selectedTrackers, from, to) {
+  const all = [];
+  selectedTrackers.forEach((t) => {
+    collectPoints(t.id, from, to).forEach((p) => all.push(p.y));
+  });
+  if (all.length < 5) return null;
+  const mean = all.reduce((s, v) => s + v, 0) / all.length;
+  const sd = Math.sqrt(all.reduce((s, v) => s + (v - mean) ** 2, 0) / all.length);
+  return {
+    lo: Math.max(1, mean - sd),
+    hi: Math.min(7, mean + sd),
+  };
 }
 
 function renderChart() {
@@ -102,30 +222,66 @@ function renderChart() {
   if (trendChart) { trendChart.destroy(); trendChart = null; }
   if (!hasData) return;
 
+  const band = normalBand(selectedTrackers, from, to);
+
   const datasets = selectedTrackers.map((t) => {
     const color = colorForTracker(t);
+    const flipped = isFlipped(t);
     return {
-      label: t.name,
-      data: collectPoints(t.id, from, to),
+      label: t.name + (flipped ? ' ↺' : ''),
+      data: rollingAverage(t.id, from, to),
+      raw: collectPoints(t.id, from, to),
       borderColor: color,
       backgroundColor: color + '22',
-      borderWidth: 3,
-      pointRadius: 4,
-      pointHoverRadius: 6,
-      spanGaps: false,
-      tension: 0.3,
+      borderWidth: 2.5,
+      pointRadius: 0,
+      pointHoverRadius: 0,
+      spanGaps: true,
+      tension: 0.4,
     };
   });
 
   trendChart = new Chart(canvas, {
     type: 'line',
     data: { datasets },
+    plugins: [normalBandPlugin, rawDotsPlugin],
     options: {
       responsive: true,
       maintainAspectRatio: false,
+      interaction: {
+        mode: 'nearest',
+        intersect: false,
+        axis: 'x',
+      },
       plugins: {
-        legend: { labels: { font: { family: 'Nunito', weight: 700 }, color: '#5b3a4a' } },
-        tooltip: { titleFont: { family: 'Nunito', weight: 700 } },
+        normalBand: band
+          ? { lo: band.lo, hi: band.hi, color: 'rgba(244,114,182,0.10)' }
+          : null,
+        legend: {
+          labels: {
+            font: { family: 'Nunito', weight: 700, size: 11 },
+            color: '#5b3a4a',
+            boxWidth: 12,
+            boxHeight: 12,
+            padding: 8,
+          },
+        },
+        tooltip: {
+          titleFont: { family: 'Nunito', weight: 700 },
+          animation: { duration: 100 },
+          callbacks: {
+            label(context) {
+              const raw = context.raw;
+              // Flipped trackers plot 8 - rating; show the real rating.
+              const val = raw ? String(raw.orig !== undefined ? raw.orig : raw.y) : '';
+              const label = `${context.dataset.label}: ${val}`;
+              if (raw && typeof raw.note === 'string' && raw.note.trim()) {
+                return [label, `Note: ${raw.note}`];
+              }
+              return label;
+            },
+          },
+        },
       },
       scales: {
         y: {

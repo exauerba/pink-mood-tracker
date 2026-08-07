@@ -276,7 +276,8 @@ function renderChart() {
             label(context) {
               const raw = context.raw;
               // Flipped trackers plot 8 - rating; show the real rating.
-              const label = raw ? String(raw.orig !== undefined ? raw.orig : raw.y) : '';
+              const val = raw ? String(raw.orig !== undefined ? raw.orig : raw.y) : '';
+              const label = `${context.dataset.label}: ${val}`;
               if (raw && typeof raw.note === 'string' && raw.note.trim()) {
                 return [label, `Note: ${raw.note}`];
               }

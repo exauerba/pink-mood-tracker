@@ -545,3 +545,12 @@ document.getElementById('import-file').addEventListener('change', (e) => {
 /* ---------- Init ---------- */
 
 renderTrack();
+
+/* Register the service worker so the app can be installed and work offline. */
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('sw.js').catch((err) => {
+      console.warn('Service worker registration failed:', err);
+    });
+  });
+}

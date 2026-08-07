@@ -41,8 +41,9 @@ function usernameError() {
 }
 
 // Turn a username into the hidden email Supabase uses internally.
+// Uses a real TLD (.app) so Supabase accepts it. Emails are never sent.
 function usernameToEmail(username) {
-  return username.toLowerCase() + '@bloom.local';
+  return username.toLowerCase() + '@bloom.app';
 }
 
 const auth = {

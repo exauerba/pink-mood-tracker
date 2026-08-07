@@ -3,7 +3,7 @@
  * Strategy: cache-first for app files and CDN assets.
  */
 
-const CACHE = 'bloom-v1';
+const CACHE = 'bloom-v2';
 
 // Files needed to run the app offline.
 const PRECACHE = [
@@ -12,11 +12,15 @@ const PRECACHE = [
   './styles.css',
   './app.js',
   './charts.js',
+  './supabase-config.js',
+  './supabase-auth.js',
+  './supabase-sync.js',
   './manifest.webmanifest',
   './icons/icon-192.png',
   './icons/icon-512.png',
   'https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js',
   'https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns@3.0.0/dist/chartjs-adapter-date-fns.bundle.min.js',
+  'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2',
 ];
 
 // Install: fetch and store the core files.

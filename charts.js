@@ -296,6 +296,7 @@ function renderChart() {
     const flipped = isFlipped(t);
     return {
       label: t.name + (flipped ? ' ↺' : ''),
+      trackerId: t.id,
       data: rollingAverage(t.id, from, to),
       raw: collectPoints(t.id, from, to),
       borderColor: color,
@@ -340,8 +341,14 @@ function renderChart() {
             label(context) {
               const raw = context.raw;
               // Flipped trackers plot 8 - rating; show the real rating.
-              const val = raw ? String(raw.orig !== undefined ? raw.orig : raw.y) : '';
-              const label = `${context.dataset.label}: ${val}`;
+              const rating = raw && raw.orig !== undefined ? raw.orig : (raw ? raw.y : undefined);
+              let label = `${context.dataset.label}: ${rating !== undefined ? rating : ''}`;
+              // Append the anchor label when this rating maps to one (1/4/7).
+              if (rating !== undefined) {
+                const t = trackers.find((x) => x.id === context.dataset.trackerId);
+                const anchor = t ? labelsFor(t)[rating] : '';
+                if (anchor) label += ` — ${anchor}`;
+              }
               if (raw && typeof raw.note === 'string' && raw.note.trim()) {
                 return [label, `Note: ${raw.note}`];
               }

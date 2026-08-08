@@ -625,6 +625,52 @@ main {
 .mini-btn.danger { background: #fde8e8; color: #c0392b; }
 .mini-btn.danger:hover { background: #f8d7d7; }
 
+/* Inline scale-label editor (Manage view) */
+.tracker-card.manage { flex-wrap: wrap; }
+
+.labels-editor {
+  flex: 1 1 100%;
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 10px;
+  align-items: end;
+  margin-top: 12px;
+  padding-top: 12px;
+  border-top: 1px dashed var(--pink-200);
+}
+
+.labels-field {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.labels-field label {
+  font-size: 0.7rem;
+  font-weight: 800;
+  color: var(--rose-700);
+}
+
+.labels-input {
+  width: 100%;
+  border: 2px solid var(--pink-100);
+  border-radius: 10px;
+  padding: 8px 10px;
+  font-family: inherit;
+  font-size: 0.85rem;
+  color: var(--text);
+  background: var(--pink-50);
+}
+
+.labels-input:focus { outline: none; border-color: var(--pink-400); }
+
+.labels-editor-actions {
+  grid-column: 1 / -1;
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+}
+
 .add-row {
   display: flex;
   gap: 10px;

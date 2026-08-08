@@ -3,7 +3,7 @@
  * Strategy: cache-first for app files and CDN assets.
  */
 
-const CACHE = 'bloom-v5';
+const CACHE = 'bloom-v6';
 
 // Files needed to run the app offline.
 const PRECACHE = [
@@ -41,10 +41,16 @@ self.addEventListener('activate', (event) => {
   );
 });
 
-// Fetch: serve from cache first, fall back to network, then cache the result.
+// Fetch: serve app files from cache first, fall back to network, then cache
+// the result. API calls (Supabase) always go straight to the network so cloud
+// data is never served from a stale cache copy.
 self.addEventListener('fetch', (event) => {
   // Only handle GET requests.
   if (event.request.method !== 'GET') return;
+
+  const url = new URL(event.request.url);
+  const isAppAsset = url.origin === self.location.origin || url.hostname === 'cdn.jsdelivr.net';
+  if (!isAppAsset) return; // API calls: always network, never cached
 
   event.respondWith(
     caches.match(event.request).then((cached) => {

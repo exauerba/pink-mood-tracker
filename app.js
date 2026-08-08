@@ -40,6 +40,10 @@ const DIRECTION_BY_ID = {
   'hyperfocus-pull': 'bad',
 };
 
+// Anchor labels shown under scale buttons 1 / 4 / 7. Other points have none.
+// Individual trackers can override these via their optional `labels` field.
+const DEFAULT_LABELS = { 1: 'Not at all', 4: 'Moderately', 7: 'Extremely' };
+
 /* ---------- Storage layer ---------- */
 
 function loadTrackers() {
@@ -59,6 +63,13 @@ function loadTrackers() {
   // Backfill direction for any saved tracker that predates it.
   saved.forEach((t) => {
     if (!t.direction) { t.direction = DIRECTION_BY_ID[t.id] || 'good'; backfilled = true; }
+  });
+  // Backfill labels: drop broken shapes so defaults apply; valid ones pass through.
+  saved.forEach((t) => {
+    if (t.labels !== undefined && (t.labels === null || typeof t.labels !== 'object' || Array.isArray(t.labels))) {
+      t.labels = undefined;
+      backfilled = true;
+    }
   });
   // Merge: keep saved trackers, append any new defaults not already present.
   const ids = new Set(saved.map((t) => t.id));
@@ -137,6 +148,34 @@ function shiftDate(iso, days) {
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
 }
 
+/* Anchor labels for a tracker: per-tracker overrides layered on defaults. */
+function labelsFor(t) {
+  const anchors = { ...DEFAULT_LABELS };
+  if (t && t.labels && typeof t.labels === 'object') {
+    [1, 4, 7].forEach((k) => {
+      const v = t.labels[k];
+      if (typeof v === 'string' && v.trim()) anchors[k] = v;
+    });
+  }
+  return anchors;
+}
+
+/* Validate and normalize a tracker's labels field. Only string values for
+ * keys 1 / 4 / 7 are kept, trimmed to 24 chars; returns undefined when no
+ * valid entry survives so defaults apply. */
+function sanitizeLabels(value) {
+  if (!value || typeof value !== 'object' || Array.isArray(value)) return undefined;
+  const out = {};
+  [1, 4, 7].forEach((k) => {
+    const v = value[k];
+    if (typeof v === 'string' && v.trim()) {
+      const trimmed = v.trim();
+      if (trimmed.length <= 24) out[k] = trimmed;
+    }
+  });
+  return Object.keys(out).length > 0 ? out : undefined;
+}
+
 /* ---------- State ---------- */
 
 let trackers = loadTrackers();
@@ -144,6 +183,7 @@ let entries = loadEntries();
 let currentDate = todayISO();
 let editingId = null; // id of check-in being edited, or null for a new one
 let draft = {}; // trackerId -> rating for the check-in form
+let labelsEditorId = null; // id of tracker whose scale labels are being edited
 
 /* ---------- Tab switching ---------- */
 
@@ -301,7 +341,7 @@ function renderScaleForm() {
 
       const labels = document.createElement('div');
       labels.className = 'scale-labels';
-      const anchors = { 1: 'Not at all', 4: 'Moderately', 7: 'Extremely' };
+      const anchors = labelsFor(t);
       for (let v = 1; v <= 7; v++) {
         const lbl = document.createElement('span');
         lbl.className = 'scale-label';
@@ -464,11 +504,23 @@ function renderManage() {
       toggle.appendChild(checkbox);
       toggle.appendChild(document.createTextNode('Higher = worse'));
 
+      const labelsBtn = document.createElement('button');
+      labelsBtn.className = 'mini-btn';
+      labelsBtn.textContent = 'Labels';
+      labelsBtn.addEventListener('click', () => {
+        labelsEditorId = labelsEditorId === t.id ? null : t.id;
+        renderManage();
+      });
+
       actions.appendChild(toggle);
+      actions.appendChild(labelsBtn);
       actions.appendChild(renameBtn);
       actions.appendChild(delBtn);
       card.appendChild(name);
       card.appendChild(actions);
+
+      if (labelsEditorId === t.id) card.appendChild(labelsEditor(t));
+
       group.appendChild(card);
     });
 
@@ -493,6 +545,64 @@ function removeTracker(idx) {
     saveTrackers(trackers);
     renderManage();
   }
+}
+
+/* Inline editor for a tracker's 1 / 4 / 7 anchor labels. Inputs are
+ * prefilled from labelsFor(t) (defaults visible until overridden). */
+function labelsEditor(t) {
+  const editor = document.createElement('div');
+  editor.className = 'labels-editor';
+
+  const anchors = labelsFor(t);
+  [1, 4, 7].forEach((v) => {
+    const field = document.createElement('div');
+    field.className = 'labels-field';
+
+    const lab = document.createElement('label');
+    lab.textContent = String(v);
+
+    const input = document.createElement('input');
+    input.className = 'labels-input';
+    input.type = 'text';
+    input.maxLength = 24;
+    input.value = anchors[v] || '';
+
+    field.appendChild(lab);
+    field.appendChild(input);
+    editor.appendChild(field);
+  });
+
+  const actions = document.createElement('div');
+  actions.className = 'labels-editor-actions';
+
+  const cancelBtn = document.createElement('button');
+  cancelBtn.className = 'mini-btn danger';
+  cancelBtn.textContent = 'Cancel';
+  cancelBtn.addEventListener('click', () => {
+    labelsEditorId = null;
+    renderManage();
+  });
+
+  const saveBtn = document.createElement('button');
+  saveBtn.className = 'mini-btn';
+  saveBtn.textContent = 'Save';
+  saveBtn.addEventListener('click', () => {
+    const labels = {};
+    const keys = [1, 4, 7];
+    editor.querySelectorAll('.labels-input').forEach((input, i) => {
+      const val = input.value.trim();
+      if (val) labels[keys[i]] = val;
+    });
+    t.labels = Object.keys(labels).length > 0 ? labels : undefined;
+    labelsEditorId = null;
+    saveTrackers(trackers);
+    renderManage();
+  });
+
+  actions.appendChild(cancelBtn);
+  actions.appendChild(saveBtn);
+  editor.appendChild(actions);
+  return editor;
 }
 
 document.getElementById('add-tracker-btn').addEventListener('click', () => {
@@ -567,6 +677,9 @@ document.getElementById('import-file').addEventListener('change', (e) => {
             direction: t.direction === 'bad' || t.direction === 'good'
               ? t.direction
               : (DIRECTION_BY_ID[id] || 'good'),
+            // Per-tracker anchor labels are optional; validated so only
+            // clean 1/4/7 strings survive (else defaults apply).
+            labels: sanitizeLabels(t.labels),
           });
         }
       }
@@ -645,6 +758,9 @@ window.bloomApp = {
     // correct known-bad ones before persisting locally.
     newTrackers.forEach((t) => {
       if (!t.direction) t.direction = DIRECTION_BY_ID[t.id] || 'good';
+      if (t.labels !== undefined && (t.labels === null || typeof t.labels !== 'object' || Array.isArray(t.labels))) {
+        t.labels = undefined;
+      }
     });
     entries = newEntries;
     localStorage.setItem(STORE_TRACKERS, JSON.stringify(trackers));

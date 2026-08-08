@@ -71,6 +71,19 @@
           <div id="viz-tracker-pills" class="pill-wrap"></div>
         </div>
         <div class="control-group">
+          <label>Range</label>
+          <div class="pill-toolbar" id="viz-range-toolbar">
+            <button class="pill range-btn" data-range="1w">1W</button>
+            <button class="pill range-btn" data-range="1m">1M</button>
+            <button class="pill range-btn" data-range="3m">3M</button>
+            <button class="pill range-btn" data-range="custom">Custom</button>
+          </div>
+          <div id="viz-custom-months" class="custom-months hidden">
+            <label for="viz-months">Months back</label>
+            <input type="number" id="viz-months" min="1" max="24" value="6">
+          </div>
+        </div>
+        <div class="control-group">
           <label>From</label>
           <input type="date" id="viz-from">
         </div>

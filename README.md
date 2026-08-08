@@ -1,2 +1,6 @@
-# pink-mood-tracker
-A simple, pastel-pink mood &amp; symptom tracker. Customizable trackers, daily check-ins, and a separate visualization view. Pure static web app — no backend, no dependencies to install.
+# Bloom
+## A minimalist, pastel mood & symptom tracker
+
+A simple, pastel-pink mood &amp; symptom tracker. Customizable trackers, cross-platform sync'd check-ins, and a separate visualization view. 
+
+This project was vibe-coded in collaboration with DeepSeek via OpenCode CLI.

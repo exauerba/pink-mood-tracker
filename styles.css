@@ -442,6 +442,37 @@ main {
   color: #fff;
 }
 
+.range-btn.active {
+  background: var(--pink-400);
+  border-color: var(--pink-400);
+  color: #fff;
+}
+
+#viz-custom-months {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-top: 4px;
+}
+
+#viz-custom-months label {
+  margin: 0;
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: var(--text-soft);
+}
+
+#viz-custom-months input[type="number"] {
+  width: 80px;
+  border: 2px solid var(--pink-100);
+  border-radius: 10px;
+  padding: 8px 10px;
+  font-family: inherit;
+  font-size: 0.95rem;
+  color: var(--text);
+  background: var(--pink-50);
+}
+
 .control-group input[type="date"] {
   border: 2px solid var(--pink-100);
   border-radius: 10px;

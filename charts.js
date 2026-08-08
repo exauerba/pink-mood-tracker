@@ -8,6 +8,8 @@
 let trendChart = null;
 let selectedForViz = new Set();
 let vizInitialized = false;
+let activeRange = '1m';
+let rangeControls = false;
 
 /* Default selection on first visit: a small mix of good/bad lines. */
 const DEFAULT_VIZ_IDS = ['anxiety', 'sleep-quality', 'energy', 'coping-skill-use', 'mood'];
@@ -70,6 +72,7 @@ const rawDotsPlugin = {
 
 function renderVisualize() {
   buildPills();
+  buildRangeControls();
   buildDateRange();
   renderChart();
   if (window.vizTime) window.vizTime.render();
@@ -126,9 +129,73 @@ function buildDateRange() {
 
   if (!from.value) from.value = shiftDate(todayISO(), -30); // last 30 days default
   if (!to.value) to.value = todayISO();
+}
 
-  from.addEventListener('change', renderVisualize);
-  to.addEventListener('change', renderVisualize);
+/* Shift an ISO date by whole calendar months, clamping day-of-month
+ * overflow to the last day of the target month (e.g. Mar 31 - 1 month
+ * gives Feb 28/29, not Mar 3). */
+function shiftMonths(iso, months) {
+  const d = new Date(iso + 'T00:00:00');
+  const day = d.getDate();
+  d.setDate(1);
+  d.setMonth(d.getMonth() + months);
+  const last = new Date(d.getFullYear(), d.getMonth() + 1, 0).getDate();
+  d.setDate(Math.min(day, last));
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+}
+
+/* Set the From/To inputs from a preset, highlight its pill, and re-render. */
+function applyRange(mode) {
+  const today = todayISO();
+  const from = document.getElementById('viz-from');
+  const to = document.getElementById('viz-to');
+
+  let fromVal;
+  if (mode === '1w') fromVal = shiftDate(today, -7);
+  else if (mode === '1m') fromVal = shiftMonths(today, -1);
+  else if (mode === '3m') fromVal = shiftMonths(today, -3);
+  else fromVal = shiftMonths(today, -(parseInt(document.getElementById('viz-months').value, 10) || 6));
+
+  from.value = fromVal;
+  to.value = today;
+  activeRange = mode;
+
+  document.querySelectorAll('#viz-range-toolbar .range-btn').forEach((b) => {
+    b.classList.toggle('active', b.dataset.range === mode);
+  });
+  document.getElementById('viz-custom-months').classList.toggle('hidden', mode !== 'custom');
+
+  renderVisualize();
+}
+
+/* Wiring the date/range inputs once (guarded) so listeners never stack. */
+function buildRangeControls() {
+  if (rangeControls) return;
+  rangeControls = true;
+
+  document.getElementById('viz-range-toolbar').addEventListener('click', (e) => {
+    const btn = e.target.closest('.range-btn');
+    if (btn) applyRange(btn.dataset.range);
+  });
+
+  document.getElementById('viz-months').addEventListener('change', () => applyRange('custom'));
+
+  const from = document.getElementById('viz-from');
+  const to = document.getElementById('viz-to');
+  from.addEventListener('change', clearActiveRange);
+  to.addEventListener('change', clearActiveRange);
+
+  // reflect the initial default (matches the 30-day default from buildDateRange)
+  document.querySelectorAll('#viz-range-toolbar .range-btn').forEach((b) => {
+    b.classList.toggle('active', b.dataset.range === activeRange);
+  });
+}
+
+/* Manual date edits drop the preset highlight; the From/To stay source of truth. */
+function clearActiveRange() {
+  activeRange = null;
+  document.querySelectorAll('#viz-range-toolbar .range-btn').forEach((b) => b.classList.remove('active'));
+  renderVisualize();
 }
 
 /* Collect {x: date+time, y: rating} points for one tracker in range.

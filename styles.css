@@ -1,17 +1,22 @@
 :root {
-  --bg: #fff5f7;
-  --card: #ffffff;
-  --pink-50: #fdf2f8;
-  --pink-100: #fce7f3;
-  --pink-200: #fbcfe8;
-  --pink-300: #f9a8d4;
-  --pink-400: #f472b6;
-  --pink-500: #ec4899;
-  --rose-600: #be185d;
-  --rose-700: #9d174d;
-  --text: #5b3a4a;
-  --text-soft: #9d7b8c;
-  --shadow: 0 6px 20px rgba(244, 114, 182, 0.15);
+  --bg: #f6f4f4;
+  --card: #fdfbfb;
+  --pink-50: #f6f1f2;
+  --pink-100: #efe6e8;
+  --pink-200: #e3cfd4;
+  --pink-300: #d0acb7;
+  --pink-400: #ba8797;
+  --pink-500: #995c6f;
+  --rose-600: #894d5b;
+  --rose-700: #4f3b3f;
+  --text: #4c3d42;
+  --text-soft: #745d66;
+  --accent-rgb: 186, 135, 151;
+  --shadow: 0 1px 2px rgba(186, 135, 151, 0.05), 0 8px 24px -8px rgba(186, 135, 151, 0.09);
+  --shadow-hover: 0 1px 3px rgba(186, 135, 151, 0.07), 0 14px 30px -12px rgba(186, 135, 151, 0.13);
+  --shadow-pressed: 0 1px 1px rgba(186, 135, 151, 0.04), 0 3px 8px -4px rgba(186, 135, 151, 0.07);
+  --hairline: #f0e9eb;
+  --ring: #874f61;
   --radius: 18px;
 }
 
@@ -39,7 +44,7 @@ body {
 
 .logo {
   font-size: 1.6rem;
-  font-weight: 800;
+  font-weight: 700;
   color: var(--rose-600);
   letter-spacing: 0.5px;
 }
@@ -62,7 +67,7 @@ body {
   font-weight: 700;
   color: var(--text-soft);
   cursor: pointer;
-  transition: all 0.2s ease;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.6, 1);
 }
 
 .tab.active {
@@ -79,7 +84,7 @@ main {
 }
 
 .view { display: none; }
-.view.active { display: block; animation: fade 0.25s ease; }
+.view.active { display: block; animation: fade 0.25s cubic-bezier(0.4, 0, 0.6, 1); }
 
 @keyframes fade {
   from { opacity: 0; transform: translateY(6px); }
@@ -88,8 +93,8 @@ main {
 
 .section-title {
   font-size: 1.3rem;
-  font-weight: 800;
-  color: var(--rose-700);
+  font-weight: 700;
+  color: var(--text);
   margin-bottom: 16px;
 }
 
@@ -114,7 +119,7 @@ main {
   font-size: 1.1rem;
   cursor: pointer;
   box-shadow: var(--shadow);
-  transition: transform 0.15s ease;
+  transition: transform 0.15s cubic-bezier(0.4, 0, 0.6, 1);
 }
 
 .icon-btn:hover { transform: scale(1.08); }
@@ -130,13 +135,14 @@ main {
 
 .tracker-card {
   background: var(--card);
+  border: 1px solid var(--hairline);
   border-radius: var(--radius);
   padding: 16px 18px;
   box-shadow: var(--shadow);
 }
 
 .tracker-card .tracker-name {
-  font-weight: 800;
+  font-weight: 700;
   font-size: 1.05rem;
   color: var(--rose-700);
   margin-bottom: 12px;
@@ -160,15 +166,15 @@ main {
   width: 100%;
   max-width: 52px;
   aspect-ratio: 1;
-  border: 2px solid var(--pink-200);
+  border: 1px solid var(--pink-200);
   background: var(--pink-50);
   color: var(--text-soft);
   border-radius: 50%;
   font-family: inherit;
-  font-weight: 800;
+  font-weight: 700;
   font-size: 1rem;
   cursor: pointer;
-  transition: all 0.15s ease;
+  transition: all 0.15s cubic-bezier(0.4, 0, 0.6, 1);
 }
 
 .scale-label {
@@ -183,9 +189,13 @@ main {
 .scale-btn.selected {
   background: var(--group-color, var(--pink-400));
   border-color: var(--group-color, var(--pink-400));
-  color: #fff;
-  box-shadow: 0 4px 12px rgba(244, 114, 182, 0.4);
+  border-width: 2px;
+  color: var(--rose-700);
+  box-shadow: 0 4px 12px rgba(var(--accent-rgb), 0.15);
 }
+
+/* Group fills are mid-tone pastels in both modes, so the selected number
+ * stays a dark ink for legibility. */
 
 /* Grouped tracker sections */
 .tracker-group {
@@ -196,7 +206,7 @@ main {
   display: flex;
   align-items: center;
   gap: 8px;
-  font-weight: 800;
+  font-weight: 700;
   font-size: 0.9rem;
   letter-spacing: 0.04em;
   text-transform: uppercase;
@@ -214,6 +224,7 @@ main {
 /* ---------- Check-in form ---------- */
 .checkin-card {
   background: var(--card);
+  border: 1px solid var(--hairline);
   border-radius: var(--radius);
   padding: 18px;
   box-shadow: var(--shadow);
@@ -222,8 +233,8 @@ main {
 
 .checkin-title {
   font-size: 1.1rem;
-  font-weight: 800;
-  color: var(--rose-700);
+  font-weight: 700;
+  color: var(--text);
   margin-bottom: 12px;
 }
 
@@ -234,10 +245,10 @@ main {
   margin-bottom: 14px;
 }
 
-.time-row label { font-weight: 800; color: var(--rose-700); }
+.time-row label { font-weight: 700; color: var(--text); }
 
 .time-row input[type="time"] {
-  border: 2px solid var(--pink-100);
+  border: 1px solid var(--pink-100);
   border-radius: 10px;
   padding: 8px 10px;
   font-family: inherit;
@@ -253,7 +264,7 @@ main {
   background: var(--pink-100);
   color: var(--rose-600);
   font-family: inherit;
-  font-weight: 800;
+  font-weight: 700;
   font-size: 0.95rem;
   padding: 10px 24px;
   border-radius: 999px;
@@ -265,6 +276,7 @@ main {
 /* ---------- Entry cards (day check-ins) ---------- */
 .entry-card {
   background: var(--card);
+  border: 1px solid var(--hairline);
   border-radius: var(--radius);
   padding: 14px 18px;
   box-shadow: var(--shadow);
@@ -278,7 +290,7 @@ main {
 }
 
 .entry-time {
-  font-weight: 800;
+  font-weight: 700;
   color: var(--rose-600);
   background: var(--pink-100);
   padding: 3px 12px;
@@ -326,6 +338,7 @@ main {
 /* ---------- Note card ---------- */
 .note-card {
   background: var(--card);
+  border: 1px solid var(--hairline);
   border-radius: var(--radius);
   padding: 16px 18px;
   box-shadow: var(--shadow);
@@ -333,15 +346,15 @@ main {
 }
 
 .note-card label {
-  font-weight: 800;
-  color: var(--rose-700);
+  font-weight: 700;
+  color: var(--text);
   display: block;
   margin-bottom: 8px;
 }
 
 .note-card textarea {
   width: 100%;
-  border: 2px solid var(--pink-100);
+  border: 1px solid var(--pink-100);
   border-radius: 12px;
   padding: 10px 12px;
   font-family: inherit;
@@ -360,7 +373,7 @@ main {
 .save-btn {
   width: 100%;
   border: none;
-  background: linear-gradient(135deg, var(--pink-400), var(--pink-500));
+  background: linear-gradient(135deg, var(--rose-600), var(--rose-700));
   color: #fff;
   font-family: inherit;
   font-size: 1.05rem;
@@ -368,11 +381,17 @@ main {
   padding: 14px;
   border-radius: 999px;
   cursor: pointer;
-  box-shadow: 0 8px 20px rgba(244, 114, 182, 0.4);
-  transition: transform 0.15s ease, box-shadow 0.15s ease;
+  box-shadow: var(--shadow);
+  transition: transform 0.15s cubic-bezier(0.4, 0, 0.6, 1), box-shadow 0.15s cubic-bezier(0.4, 0, 0.6, 1);
 }
 
-.save-btn:hover { transform: translateY(-2px); box-shadow: 0 10px 24px rgba(244, 114, 182, 0.5); }
+.save-btn:hover { transform: translateY(-2px); box-shadow: var(--shadow-hover); }
+.save-btn:active { transform: translateY(0); box-shadow: var(--shadow-pressed); }
+
+/* Dark mode: rose-600 is luminous, so the button uses the darker end of the ramp to keep white text readable. */
+[data-theme="dark"] .save-btn {
+  background: linear-gradient(135deg, var(--pink-100), var(--pink-300));
+}
 
 .save-status {
   text-align: center;
@@ -385,6 +404,7 @@ main {
 /* ---------- Visualize ---------- */
 .viz-controls {
   background: var(--card);
+  border: 1px solid var(--hairline);
   border-radius: var(--radius);
   padding: 16px 18px;
   box-shadow: var(--shadow);
@@ -396,8 +416,8 @@ main {
 
 .control-group label {
   display: block;
-  font-weight: 800;
-  color: var(--rose-700);
+  font-weight: 700;
+  color: var(--text);
   font-size: 0.9rem;
   margin-bottom: 8px;
 }
@@ -415,7 +435,7 @@ main {
   background: transparent;
   color: var(--text-soft);
   font-family: inherit;
-  font-weight: 800;
+  font-weight: 700;
   font-size: 0.85rem;
   cursor: pointer;
   padding: 2px 0;
@@ -424,7 +444,7 @@ main {
 .viz-tool:hover { color: var(--pink-500); }
 
 .pill {
-  border: 2px solid var(--pink-200);
+  border: 1px solid var(--pink-200);
   background: var(--pink-50);
   color: var(--text-soft);
   padding: 6px 14px;
@@ -433,19 +453,19 @@ main {
   font-weight: 700;
   font-size: 0.9rem;
   cursor: pointer;
-  transition: all 0.15s ease;
+  transition: all 0.15s cubic-bezier(0.4, 0, 0.6, 1);
 }
 
 .pill.active {
-  background: var(--pink-400);
-  border-color: var(--pink-400);
-  color: #fff;
+  background: var(--pink-200);
+  border-color: var(--pink-200);
+  color: var(--text);
 }
 
 .range-btn.active {
-  background: var(--pink-400);
-  border-color: var(--pink-400);
-  color: #fff;
+  background: var(--pink-200);
+  border-color: var(--pink-200);
+  color: var(--text);
 }
 
 #viz-custom-months {
@@ -464,7 +484,7 @@ main {
 
 #viz-custom-months input[type="number"] {
   width: 80px;
-  border: 2px solid var(--pink-100);
+  border: 1px solid var(--pink-100);
   border-radius: 10px;
   padding: 8px 10px;
   font-family: inherit;
@@ -474,7 +494,7 @@ main {
 }
 
 .control-group input[type="date"] {
-  border: 2px solid var(--pink-100);
+  border: 1px solid var(--pink-100);
   border-radius: 10px;
   padding: 8px 10px;
   font-family: inherit;
@@ -484,6 +504,7 @@ main {
 
 .chart-card {
   background: var(--card);
+  border: 1px solid var(--hairline);
   border-radius: var(--radius);
   padding: 18px;
   box-shadow: var(--shadow);
@@ -508,6 +529,7 @@ main {
 
 .viz-card {
   background: var(--card);
+  border: 1px solid var(--hairline);
   border-radius: var(--radius);
   padding: 18px;
   box-shadow: var(--shadow);
@@ -515,9 +537,9 @@ main {
 }
 
 .viz-card-title {
-  color: var(--rose-700);
+  color: var(--text);
   font-size: 1.05rem;
-  font-weight: 800;
+  font-weight: 700;
   margin-bottom: 12px;
 }
 
@@ -553,8 +575,8 @@ main {
 }
 
 .corr-table th {
-  color: var(--rose-700);
-  font-weight: 800;
+  color: var(--text);
+  font-weight: 700;
   background: var(--pink-50);
   white-space: nowrap;
 }
@@ -618,7 +640,7 @@ main {
   font-weight: 700;
   font-size: 0.85rem;
   cursor: pointer;
-  transition: background 0.15s ease;
+  transition: background 0.15s cubic-bezier(0.4, 0, 0.6, 1);
 }
 
 .mini-btn:hover { background: var(--pink-200); }
@@ -647,13 +669,13 @@ main {
 
 .labels-field label {
   font-size: 0.7rem;
-  font-weight: 800;
-  color: var(--rose-700);
+  font-weight: 700;
+  color: var(--text);
 }
 
 .labels-input {
   width: 100%;
-  border: 2px solid var(--pink-100);
+  border: 1px solid var(--pink-100);
   border-radius: 10px;
   padding: 8px 10px;
   font-family: inherit;
@@ -678,7 +700,7 @@ main {
 
 .add-row input {
   flex: 1;
-  border: 2px solid var(--pink-100);
+  border: 1px solid var(--pink-100);
   border-radius: 999px;
   padding: 12px 16px;
   font-family: inherit;
@@ -691,7 +713,7 @@ main {
 .add-row .save-btn { width: auto; padding: 12px 24px; }
 
 .group-select {
-  border: 2px solid var(--pink-100);
+  border: 1px solid var(--pink-100);
   border-radius: 999px;
   padding: 12px 14px;
   font-family: inherit;
@@ -706,6 +728,7 @@ main {
 /* ---------- Backup ---------- */
 .backup-card {
   background: var(--card);
+  border: 1px solid var(--hairline);
   border-radius: var(--radius);
   padding: 18px;
   box-shadow: var(--shadow);
@@ -723,11 +746,11 @@ main {
   color: #c0392b;
   font-family: inherit;
   font-size: 1rem;
-  font-weight: 800;
+  font-weight: 700;
   padding: 12px;
   border-radius: 999px;
   cursor: pointer;
-  transition: background 0.15s ease;
+  transition: background 0.15s cubic-bezier(0.4, 0, 0.6, 1);
 }
 
 .danger-btn:hover { background: #fde8e8; }
@@ -735,7 +758,7 @@ main {
 
 /* ---------- Sign out ---------- */
 .signout-btn {
-  border: 2px solid var(--pink-200);
+  border: 1px solid var(--pink-200);
   background: var(--card);
   color: var(--rose-600);
   padding: 6px 14px;
@@ -744,7 +767,7 @@ main {
   font-size: 0.85rem;
   font-weight: 700;
   cursor: pointer;
-  transition: all 0.15s ease;
+  transition: all 0.15s cubic-bezier(0.4, 0, 0.6, 1);
 }
 
 .signout-btn:hover { background: var(--pink-100); border-color: var(--pink-400); }
@@ -758,7 +781,7 @@ main {
   align-items: center;
   justify-content: center;
   padding: 20px;
-  background: rgba(255, 245, 247, 0.95);
+  background: color-mix(in srgb, var(--bg) 95%, transparent);
   backdrop-filter: blur(2px);
 }
 
@@ -766,6 +789,7 @@ main {
 
 .auth-card {
   background: var(--card);
+  border: 1px solid var(--hairline);
   border-radius: var(--radius);
   padding: 28px 24px;
   box-shadow: var(--shadow);
@@ -778,7 +802,7 @@ main {
 
 .auth-title {
   font-size: 1.8rem;
-  font-weight: 800;
+  font-weight: 700;
   color: var(--rose-600);
   text-align: center;
 }
@@ -792,7 +816,7 @@ main {
 
 .auth-input {
   width: 100%;
-  border: 2px solid var(--pink-100);
+  border: 1px solid var(--pink-100);
   border-radius: 999px;
   padding: 12px 16px;
   font-family: inherit;
@@ -821,11 +845,11 @@ main {
   color: var(--rose-600);
   font-family: inherit;
   font-size: 1rem;
-  font-weight: 800;
+  font-weight: 700;
   padding: 12px;
   border-radius: 999px;
   cursor: pointer;
-  transition: background 0.15s ease;
+  transition: background 0.15s cubic-bezier(0.4, 0, 0.6, 1);
 }
 
 .auth-signup-btn:hover { background: var(--pink-200); }
@@ -849,4 +873,127 @@ main {
   color: var(--text-soft);
   font-size: 0.8rem;
   margin-top: -4px;
+}
+
+/* ---------- Theme picker ---------- */
+.theme-card {
+  background: var(--card);
+  border: 1px solid var(--hairline);
+  border-radius: var(--radius);
+  padding: 18px;
+  box-shadow: var(--shadow);
+  margin-top: 24px;
+}
+
+.theme-card .hint { margin-bottom: 0; }
+
+.theme-swatches {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-top: 12px;
+}
+
+.theme-swatch {
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  padding: 6px;
+  font-family: inherit;
+  border-radius: 12px;
+}
+
+.swatch-dot {
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  border: 2px solid transparent;
+  transition: transform 0.15s cubic-bezier(0.4, 0, 0.6, 1), border-color 0.15s cubic-bezier(0.4, 0, 0.6, 1);
+}
+
+.theme-swatch:hover .swatch-dot { transform: scale(1.1); }
+
+.theme-swatch.active .swatch-dot { border-color: var(--rose-600); }
+
+.swatch-label {
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: var(--text-soft);
+}
+
+.theme-swatch.active .swatch-label { color: var(--text); }
+
+/* ---------- Theme mode toggle ---------- */
+.theme-modes-label {
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: var(--text-soft);
+  margin-top: 14px;
+  margin-bottom: 2px;
+}
+
+.theme-modes {
+  display: flex;
+  gap: 8px;
+  margin-top: 12px;
+}
+
+.theme-mode-btn {
+  flex: 1;
+  padding: 8px 0;
+  border: 1px solid var(--pink-200);
+  border-radius: 12px;
+  background: var(--card);
+  color: var(--text-soft);
+  font-family: inherit;
+  font-weight: 700;
+  font-size: 0.8rem;
+  cursor: pointer;
+  transition: background 0.15s cubic-bezier(0.4, 0, 0.6, 1), color 0.15s cubic-bezier(0.4, 0, 0.6, 1), border-color 0.15s cubic-bezier(0.4, 0, 0.6, 1);
+}
+
+.theme-mode-btn:hover {
+  border-color: var(--pink-300);
+  color: var(--text);
+}
+
+.theme-mode-btn.active {
+  background: var(--pink-100);
+  border-color: var(--pink-300);
+  color: var(--text);
+}
+
+/* ---------- Focus rings (keyboard) ---------- */
+button:focus-visible,
+input:focus-visible,
+select:focus-visible {
+  outline: 3px solid var(--ring);
+  outline-offset: 2px;
+}
+
+.note-card textarea:focus-visible,
+.labels-input:focus-visible,
+.add-row input:focus-visible,
+.group-select:focus-visible,
+.auth-input:focus-visible,
+.scale-btn:focus-visible,
+.tracker-card textarea:focus-visible {
+  outline: 3px solid var(--ring);
+  outline-offset: 2px;
+}
+
+/* ---------- Reduced motion ---------- */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
 }

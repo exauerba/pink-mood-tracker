@@ -9,13 +9,13 @@ const STORE_ENTRIES = 'bloom.entries';
 
 let syncing = false; // true while a pull is loading data, to avoid push loops
 
-const GROUPS = {
-  emotional: { label: 'Emotional states', color: '#ec4899' },
-  physical: { label: 'Physical & sleep', color: '#a78bfa' },
-  mind: { label: 'Mind & focus', color: '#38bdf8' },
-  coping: { label: 'Coping & connection', color: '#34d399' },
-  craving: { label: 'Craving', color: '#fb923c' },
-  other: { label: 'Other', color: '#94a3b8' },
+let GROUPS = {
+  emotional: { label: 'Emotional states', color: '#ba8797' },
+  physical: { label: 'Physical & sleep', color: '#69957e' },
+  mind: { label: 'Mind & focus', color: '#748db3' },
+  coping: { label: 'Coping & connection', color: '#a7865b' },
+  craving: { label: 'Craving', color: '#9482bc' },
+  other: { label: 'Other', color: '#8e8a89' },
 };
 
 const DEFAULT_TRACKERS = [
@@ -88,7 +88,10 @@ function loadEntries() {
   const raw = localStorage.getItem(STORE_ENTRIES);
   let entries = {};
   if (raw) {
-    try { entries = JSON.parse(raw); } catch (e) { /* fall through */ }
+    try {
+      const parsed = JSON.parse(raw);
+      if (parsed && typeof parsed === 'object' && !Array.isArray(parsed)) entries = parsed;
+    } catch (e) { /* fall through */ }
   }
   return migrate(entries);
 }
@@ -198,6 +201,17 @@ document.querySelectorAll('.tab').forEach((tab) => {
   });
 });
 
+// Re-apply current group colors to the (already rendered) Track view.
+// Needed because applyPalette() swaps GROUPS without re-rendering.
+function updateGroupColors() {
+  document.querySelectorAll('.tracker-group').forEach((grp) => {
+    const c = (GROUPS[grp.dataset.groupId] || GROUPS.other).color;
+    grp.querySelector('.group-dot').style.background = c;
+    grp.querySelectorAll('.tracker-name').forEach((n) => (n.style.color = c));
+    grp.querySelectorAll('.scale-btn').forEach((b) => b.style.setProperty('--group-color', c));
+  });
+}
+
 /* ---------- TRACK VIEW ---------- */
 
 function renderTrack() {
@@ -286,6 +300,10 @@ function renderScaleForm() {
   const list = document.getElementById('tracker-list');
   list.innerHTML = '';
 
+  // Drop draft ratings for trackers that no longer exist.
+  const validIds = new Set(trackers.map((t) => t.id));
+  Object.keys(draft).forEach((k) => { if (!validIds.has(k)) delete draft[k]; });
+
   // Group trackers by their group, preserving default order.
   const order = ['emotional', 'physical', 'mind', 'coping', 'craving', 'other'];
   const grouped = {};
@@ -301,6 +319,7 @@ function renderScaleForm() {
 
     const group = document.createElement('div');
     group.className = 'tracker-group';
+    group.dataset.groupId = gid;
 
     const header = document.createElement('div');
     header.className = 'group-header';
@@ -458,6 +477,7 @@ function renderManage() {
 
     const group = document.createElement('div');
     group.className = 'tracker-group';
+    group.dataset.groupId = gid;
 
     const header = document.createElement('div');
     header.className = 'group-header';
@@ -526,6 +546,69 @@ function renderManage() {
 
     list.appendChild(group);
   });
+
+  const savedPalette = localStorage.getItem('bloom.palette') || 'blush';
+  const theme = document.createElement('div');
+  theme.className = 'theme-card';
+
+  const themeTitle = document.createElement('h3');
+  themeTitle.className = 'checkin-title';
+  themeTitle.textContent = 'Theme';
+
+  const themeHint = document.createElement('p');
+  themeHint.className = 'hint';
+  themeHint.textContent = 'Pick a pastel palette.';
+
+  const swatches = document.createElement('div');
+  swatches.className = 'theme-swatches';
+
+  Object.entries(PALETTES).forEach(([id, p]) => {
+    const btn = document.createElement('button');
+    btn.className = 'theme-swatch' + (id === savedPalette ? ' active' : '');
+    btn.dataset.palette = id;
+    btn.title = p.name;
+
+    const dot = document.createElement('span');
+    dot.className = 'swatch-dot';
+    dot.style.background = PALETTES[id].light['--pink-400'];
+
+    const label = document.createElement('span');
+    label.className = 'swatch-label';
+    label.textContent = p.name;
+
+    btn.appendChild(dot);
+    btn.appendChild(label);
+    btn.addEventListener('click', () => {
+      applyPalette(id);
+      updateGroupColors();
+      renderManage();
+    });
+
+    swatches.appendChild(btn);
+  });
+
+  const savedMode = localStorage.getItem('bloom.theme') || 'auto';
+  const modes = document.createElement('div');
+  modes.className = 'theme-modes';
+
+  ['auto', 'light', 'dark'].forEach((m) => {
+    const btn = document.createElement('button');
+    btn.className = 'theme-mode-btn' + (m === savedMode ? ' active' : '');
+    btn.dataset.mode = m;
+    btn.textContent = m.charAt(0).toUpperCase() + m.slice(1);
+    btn.addEventListener('click', () => {
+      setThemeMode(m);
+      updateGroupColors();
+      renderManage();
+    });
+    modes.appendChild(btn);
+  });
+
+  theme.appendChild(themeTitle);
+  theme.appendChild(themeHint);
+  theme.appendChild(swatches);
+  theme.appendChild(modes);
+  list.appendChild(theme);
 }
 
 function renameTracker(idx) {
@@ -542,6 +625,7 @@ function removeTracker(idx) {
   const t = trackers[idx];
   if (confirm('Remove "' + t.name + '"? Its past ratings will be kept but hidden.')) {
     trackers.splice(idx, 1);
+    delete draft[t.id];
     saveTrackers(trackers);
     renderManage();
   }
@@ -610,7 +694,13 @@ document.getElementById('add-tracker-btn').addEventListener('click', () => {
   const name = input.value.trim();
   if (!name) return;
   const group = document.getElementById('new-tracker-group').value;
-  trackers.push({ id: slug(name), name, group, direction: 'good' });
+  let id = slug(name);
+  if (trackers.some((t) => t.id === id)) {
+    let n = 2;
+    while (trackers.some((t) => t.id === id + '-' + n)) n++;
+    id = id + '-' + n;
+  }
+  trackers.push({ id, name, group, direction: 'good' });
   saveTrackers(trackers);
   input.value = '';
   renderManage();
@@ -735,6 +825,7 @@ document.getElementById('import-file').addEventListener('change', (e) => {
 
 /* ---------- Init ---------- */
 
+applyPalette(localStorage.getItem('bloom.palette') || 'blush');
 renderTrack();
 
 /* Register the service worker so the app can be installed and work offline. */

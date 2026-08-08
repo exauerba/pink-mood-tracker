@@ -3,7 +3,7 @@
  * Strategy: cache-first for app files and CDN assets.
  */
 
-const CACHE = 'bloom-v6';
+const CACHE = 'bloom-v9';
 
 // Files needed to run the app offline.
 const PRECACHE = [
@@ -11,6 +11,7 @@ const PRECACHE = [
   './index.html',
   './styles.css',
   './app.js',
+  './palettes.js',
   './charts.js',
   './viz-time.js',
   './viz-insights.js',
@@ -52,17 +53,33 @@ self.addEventListener('fetch', (event) => {
   const isAppAsset = url.origin === self.location.origin || url.hostname === 'cdn.jsdelivr.net';
   if (!isAppAsset) return; // API calls: always network, never cached
 
-  event.respondWith(
-    caches.match(event.request).then((cached) => {
-      if (cached) return cached;
-      return fetch(event.request).then((response) => {
-        // Only cache successful, same-origin or CDN responses.
+  // Navigations: network-first so new deploys are picked up immediately,
+  // falling back to the cached page when offline.
+  if (event.request.mode === 'navigate') {
+    event.respondWith(
+      fetch(event.request).then((response) => {
         if (response && response.ok) {
           const copy = response.clone();
           caches.open(CACHE).then((cache) => cache.put(event.request, copy));
         }
         return response;
-      });
+      }).catch(() => caches.match(event.request))
+    );
+    return;
+  }
+
+  // Static assets: serve from cache instantly, refresh it in the background
+  // (stale-while-revalidate) so updates propagate without a manual bump.
+  event.respondWith(
+    caches.match(event.request).then((cached) => {
+      const network = fetch(event.request).then((response) => {
+        if (response && response.ok) {
+          const copy = response.clone();
+          caches.open(CACHE).then((cache) => cache.put(event.request, copy));
+        }
+        return response;
+      }).catch(() => cached);
+      return cached || network;
     })
   );
 });

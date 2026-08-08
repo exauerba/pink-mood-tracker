@@ -102,7 +102,25 @@ async function pushEntries(entries) {
     });
   });
   const { error } = await window.bloomClient.from('entries').upsert(rows, { onConflict: 'user_id,checkin_id' });
-  return error ? { error } : { ok: true };
+  if (error) return { error };
+
+  // Remove cloud check-ins that no longer exist locally (deleted).
+  const localIds = rows.map((r) => r.checkin_id);
+  const { data: existing, error: listError } = await window.bloomClient
+    .from('entries')
+    .select('checkin_id')
+    .eq('user_id', user.id);
+  if (listError) return { error: listError };
+  const stale = (existing || []).filter((r) => !localIds.includes(r.checkin_id)).map((r) => r.checkin_id);
+  if (stale.length > 0) {
+    const { error: delError } = await window.bloomClient
+      .from('entries')
+      .delete()
+      .eq('user_id', user.id)
+      .in('checkin_id', stale);
+    if (delError) return { error: delError };
+  }
+  return { ok: true };
 }
 
 window.bloomSync = { pull, pushTrackers, pushEntries };

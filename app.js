@@ -557,10 +557,16 @@ document.getElementById('import-file').addEventListener('change', (e) => {
             typeof t.name !== 'string' || t.name.trim().length === 0 ||
             typeof t.group !== 'string' || !validGroups.includes(t.group)
           ) continue;
+          const id = (typeof t.id === 'string' && t.id) || slug(t.name);
           sanitizedTrackers.push({
-            id: (typeof t.id === 'string' && t.id) || slug(t.name),
+            id,
             name: t.name.trim(),
             group: t.group,
+            // Old backups predate the direction toggle; backfill from known
+            // ids. Explicit directions in the file are kept as-is.
+            direction: t.direction === 'bad' || t.direction === 'good'
+              ? t.direction
+              : (DIRECTION_BY_ID[id] || 'good'),
           });
         }
       }

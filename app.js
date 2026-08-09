@@ -6,8 +6,10 @@
 
 const STORE_TRACKERS = 'bloom.trackers';
 const STORE_ENTRIES = 'bloom.entries';
+const STORE_DELETED = 'bloom.deletedTrackers';
 
 let syncing = false; // true while a pull is loading data, to avoid push loops
+let currentUid = null; // signed-in user id; tombstones are stored per user
 
 let GROUPS = {
   emotional: { label: 'Emotional states', color: '#ba8797' },
@@ -74,14 +76,17 @@ function loadTrackers() {
   // Merge: keep saved trackers, append any new defaults not already present.
   const ids = new Set(saved.map((t) => t.id));
   let added = false;
-  defaults.forEach((d) => { if (!ids.has(d.id)) { saved.push(d); added = true; } });
+  defaults.forEach((d) => { if (!ids.has(d.id) && !isDeleted(d.id)) { saved.push(d); added = true; } });
   if (added || backfilled) saveTrackers(saved);
   return saved;
 }
 
 function saveTrackers(trackers) {
   localStorage.setItem(STORE_TRACKERS, JSON.stringify(trackers));
-  if (!syncing && window.bloomSync) window.bloomSync.pushTrackers(trackers);
+  if (!syncing && window.bloomSync) {
+    window.bloomLastTrackersPush = window.bloomSync.pushTrackers(trackers);
+    return window.bloomLastTrackersPush;
+  }
 }
 
 function loadEntries() {
@@ -98,7 +103,23 @@ function loadEntries() {
 
 function saveEntries(entries) {
   localStorage.setItem(STORE_ENTRIES, JSON.stringify(entries));
-  if (!syncing && window.bloomSync) window.bloomSync.pushEntries(entries);
+  if (!syncing && window.bloomSync) {
+    window.bloomLastEntriesPush = window.bloomSync.pushEntries(entries);
+    return window.bloomLastEntriesPush;
+  }
+}
+
+function readDeleted(key) { try { return JSON.parse(localStorage.getItem(key)) || []; } catch (e) { return []; } }
+function deletedKey() { return currentUid ? STORE_DELETED + '.' + currentUid : STORE_DELETED; }
+function deletedIds() { return readDeleted(deletedKey()); }
+function rememberDeleted(id) { const ids = deletedIds(); if (!ids.includes(id)) { ids.push(id); localStorage.setItem(deletedKey(), JSON.stringify(ids)); } }
+function forgetDeleted(id) {
+  const keys = [STORE_DELETED].concat(Object.keys(localStorage).filter((k) => k.startsWith(STORE_DELETED + '.')));
+  keys.forEach((k) => localStorage.setItem(k, JSON.stringify(readDeleted(k).filter((x) => x !== id))));
+}
+function isDeleted(id) {
+  const keys = currentUid ? [STORE_DELETED + '.' + currentUid, STORE_DELETED] : [STORE_DELETED];
+  return keys.some((k) => readDeleted(k).includes(id));
 }
 
 /* Migrate the old single-record-per-day format to the check-in array format. */
@@ -180,6 +201,16 @@ function sanitizeLabels(value) {
 }
 
 /* ---------- State ---------- */
+
+// Recover the signed-in user's id synchronously so the defaults merge can
+// respect per-user deletions even on a signed-in page reload.
+try {
+  const sessionKey = Object.keys(localStorage).find((k) => k.startsWith('sb-') && k.endsWith('-auth-token'));
+  if (sessionKey) {
+    const s = JSON.parse(localStorage.getItem(sessionKey));
+    if (s && s.user && s.user.id) currentUid = s.user.id;
+  }
+} catch (e) { /* no stored session */ }
 
 let trackers = loadTrackers();
 let entries = loadEntries();
@@ -621,12 +652,17 @@ function renameTracker(idx) {
   }
 }
 
-function removeTracker(idx) {
+async function removeTracker(idx) {
   const t = trackers[idx];
   if (confirm('Remove "' + t.name + '"? Its past ratings will be kept but hidden.')) {
     trackers.splice(idx, 1);
     delete draft[t.id];
-    saveTrackers(trackers);
+    rememberDeleted(t.id);
+    const res = await saveTrackers(trackers);
+    if (res && res.error) {
+      const status = document.getElementById('manage-status');
+      if (status) status.textContent = 'Removed on this device — will finish syncing later.';
+    }
     renderManage();
   }
 }
@@ -700,6 +736,7 @@ document.getElementById('add-tracker-btn').addEventListener('click', () => {
     while (trackers.some((t) => t.id === id + '-' + n)) n++;
     id = id + '-' + n;
   }
+  forgetDeleted(id);
   trackers.push({ id, name, group, direction: 'good' });
   saveTrackers(trackers);
   input.value = '';
@@ -844,20 +881,34 @@ if ('serviceWorker' in navigator) {
 window.bloomApp = {
   loadLocalData(newTrackers, newEntries) {
     syncing = true;
-    trackers = newTrackers;
-    // Cloud rows may be missing direction (migrated rows default to 'good');
-    // correct known-bad ones before persisting locally.
-    newTrackers.forEach((t) => {
-      if (!t.direction) t.direction = DIRECTION_BY_ID[t.id] || 'good';
-      if (t.labels !== undefined && (t.labels === null || typeof t.labels !== 'object' || Array.isArray(t.labels))) {
-        t.labels = undefined;
-      }
-    });
-    entries = newEntries;
-    localStorage.setItem(STORE_TRACKERS, JSON.stringify(trackers));
-    localStorage.setItem(STORE_ENTRIES, JSON.stringify(entries));
-    syncing = false;
+    try {
+      trackers = newTrackers;
+      // Cloud rows may be missing direction (migrated rows default to 'good');
+      // correct known-bad ones before persisting locally.
+      newTrackers.forEach((t) => {
+        if (!t.direction) t.direction = DIRECTION_BY_ID[t.id] || 'good';
+        if (t.labels !== undefined && (t.labels === null || typeof t.labels !== 'object' || Array.isArray(t.labels))) {
+          t.labels = undefined;
+        }
+      });
+      entries = newEntries;
+      localStorage.setItem(STORE_TRACKERS, JSON.stringify(trackers));
+      localStorage.setItem(STORE_ENTRIES, JSON.stringify(entries));
+    } finally {
+      syncing = false;
+    }
     renderTrack();
     renderManage();
+  },
+  isDeleted,
+  rememberDeleted,
+  setUser(uid) { currentUid = uid || null; },
+  clearLocal() {
+    localStorage.removeItem(STORE_TRACKERS);
+    localStorage.removeItem(STORE_ENTRIES);
+    localStorage.removeItem(STORE_DELETED);
+    trackers = [];
+    entries = {};
+    currentUid = null;
   }
 };

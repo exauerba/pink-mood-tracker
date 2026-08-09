@@ -33,12 +33,14 @@ async function pull() {
     if ((!trackerRows || trackerRows.length === 0) && (!entryRows || entryRows.length === 0)) {
       const localTrackers = JSON.parse(localStorage.getItem('bloom.trackers')) || [];
       const localEntries = JSON.parse(localStorage.getItem('bloom.entries')) || {};
-      await pushTrackers(localTrackers);
-      await pushEntries(localEntries);
+      const t = await pushTrackers(localTrackers);
+      if (t && t.error) return { error: t.error };
+      const e = await pushEntries(localEntries);
+      if (e && e.error) return { error: e.error };
       return { ok: true };
     }
 
-    const cloudTrackers = (trackerRows || []).map((t) => ({
+    let cloudTrackers = (trackerRows || []).map((t) => ({
       id: t.id,
       name: t.name,
       group: t.group,
@@ -52,6 +54,16 @@ async function pull() {
       cloudEntries[e.date].push({ id: e.checkin_id, time: e.time, ratings: e.ratings, note: e.note });
     });
 
+    if (window.bloomApp && window.bloomApp.isDeleted) {
+      const dropped = cloudTrackers.filter((t) => window.bloomApp.isDeleted(t.id));
+      if (dropped.length > 0) {
+        cloudTrackers = cloudTrackers.filter((t) => !window.bloomApp.isDeleted(t.id));
+        // Own device-level deletions per-user so they survive the next sign-out.
+        if (window.bloomApp.rememberDeleted) dropped.forEach((t) => window.bloomApp.rememberDeleted(t.id));
+        const heal = await pushTrackers(cloudTrackers);
+        if (heal && heal.error) return { error: heal.error };
+      }
+    }
     window.bloomApp.loadLocalData(cloudTrackers, cloudEntries);
     return { ok: true };
   } catch (e) {
@@ -123,4 +135,9 @@ async function pushEntries(entries) {
   return { ok: true };
 }
 
-window.bloomSync = { pull, pushTrackers, pushEntries };
+async function flushPending() {
+  if (window.bloomLastTrackersPush) await window.bloomLastTrackersPush.catch(() => {});
+  if (window.bloomLastEntriesPush) await window.bloomLastEntriesPush.catch(() => {});
+}
+
+window.bloomSync = { pull, pushTrackers, pushEntries, flushPending };

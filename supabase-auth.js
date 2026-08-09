@@ -115,6 +115,8 @@ const auth = {
 
       localStorage.removeItem('bloom.trackers');
       localStorage.removeItem('bloom.entries');
+      localStorage.removeItem('bloom.deletedTrackers');
+      if (data.session && data.session.user) localStorage.removeItem('bloom.deletedTrackers.' + data.session.user.id);
       await client.auth.signOut();
       return { ok: true };
     } catch (e) {
@@ -196,8 +198,10 @@ const signinBtn = document.getElementById('auth-signin-btn');
 
   if (signoutBtn) {
     signoutBtn.addEventListener('click', async () => {
+      if (window.bloomSync && window.bloomSync.flushPending) await window.bloomSync.flushPending();
       await window.bloomAuth.signOut();
-      applyAuthState(false);
+      if (window.bloomApp && window.bloomApp.clearLocal) window.bloomApp.clearLocal();
+      location.reload();
     });
   }
 
@@ -219,7 +223,6 @@ const signinBtn = document.getElementById('auth-signin-btn');
         status.style.color = res.ok ? 'var(--text-soft)' : '#c0392b';
       }
       deleteBtn.disabled = false;
-      if (res.ok) applyAuthState(false);
     });
   }
 
@@ -257,7 +260,6 @@ const signinBtn = document.getElementById('auth-signin-btn');
         lockedUntil = 0;
         username.value = '';
         password.value = '';
-        applyAuthState(true);
       }
     });
   }
@@ -286,7 +288,6 @@ const signinBtn = document.getElementById('auth-signin-btn');
         username.value = '';
         password.value = '';
         setStatus('Account created. Welcome!', false);
-        applyAuthState(true);
       }
     });
   }
@@ -308,6 +309,7 @@ const signinBtn = document.getElementById('auth-signin-btn');
 
   // Only react to real sign-in / sign-out events, not the initial session.
   window.bloomAuth.onAuthChange(async ({ event, session }) => {
+    if (window.bloomApp && window.bloomApp.setUser) window.bloomApp.setUser(session ? session.user.id : null);
     if (event === 'SIGNED_IN' || event === 'SIGNED_OUT') {
       await applyAuthState(!!session);
     }

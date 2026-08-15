@@ -11,8 +11,31 @@ let vizInitialized = false;
 let activeRange = '1m';
 let rangeControls = false;
 
-/* Default selection on first visit: a small mix of good/bad lines. */
-const DEFAULT_VIZ_IDS = ['anxiety', 'sleep-quality', 'energy', 'coping-skill-use', 'mood'];
+/* Default selection on first visit: the 5 trackers with the most data
+ * points, breaking ties by higher variance so the lines shown have the
+ * most to say. Falls back to the first 5 trackers when there is no data. */
+function defaultVizSelection() {
+  const scored = trackers.map((t) => {
+    let count = 0;
+    let sum = 0;
+    let squares = 0;
+    Object.keys(entries).forEach((d) => {
+      (entries[d] || []).forEach((e) => {
+        const v = e.ratings[t.id];
+        if (typeof v === 'number') {
+          count++;
+          sum += v;
+          squares += v * v;
+        }
+      });
+    });
+    const mean = count === 0 ? 0 : sum / count;
+    const variance = count === 0 ? 0 : Math.max(0, squares / count - mean * mean);
+    return { id: t.id, count, variance };
+  });
+  scored.sort((a, b) => b.count - a.count || b.variance - a.variance);
+  return scored.slice(0, 5).map((s) => s.id);
+}
 
 function isFlipped(t) { return t.direction === 'bad'; }
 function flipValue(v) { return 8 - v; }
@@ -83,10 +106,10 @@ function buildPills() {
   const wrap = document.getElementById('viz-tracker-pills');
   wrap.innerHTML = '';
 
-  // default: a small curated set on first visit
+  // default: the trackers with the most data on first visit
   if (!vizInitialized) {
-    DEFAULT_VIZ_IDS.forEach((id) => {
-      if (trackers.some((t) => t.id === id)) selectedForViz.add(id);
+    defaultVizSelection().forEach((id) => {
+      selectedForViz.add(id);
     });
     vizInitialized = true;
   }

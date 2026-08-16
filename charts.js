@@ -11,8 +11,9 @@ let vizInitialized = false;
 let activeRange = '1m';
 let rangeControls = false;
 
-/* Default selection on first visit: a small mix of good/bad lines. */
-const DEFAULT_VIZ_IDS = ['anxiety', 'sleep-quality', 'energy', 'coping-skill-use', 'mood'];
+/* Default selection on first visit: the N trackers with the most ratings
+ * in range, ties broken by higher rating variance. */
+const DEFAULT_VIZ_COUNT = 5;
 
 function isFlipped(t) { return t.direction === 'bad'; }
 function flipValue(v) { return 8 - v; }
@@ -71,9 +72,9 @@ const rawDotsPlugin = {
 };
 
 function renderVisualize() {
+  buildDateRange();
   buildPills();
   buildRangeControls();
-  buildDateRange();
   renderChart();
   if (window.vizTime) window.vizTime.render();
   if (window.vizInsights) window.vizInsights.render();
@@ -83,11 +84,9 @@ function buildPills() {
   const wrap = document.getElementById('viz-tracker-pills');
   wrap.innerHTML = '';
 
-  // default: a small curated set on first visit
+  // default on first visit: most data first, then most variable ratings
   if (!vizInitialized) {
-    DEFAULT_VIZ_IDS.forEach((id) => {
-      if (trackers.some((t) => t.id === id)) selectedForViz.add(id);
-    });
+    autoSelectDefaults();
     vizInitialized = true;
   }
 
@@ -121,6 +120,25 @@ function buildPills() {
     });
     wrap.appendChild(pill);
   });
+}
+
+/* Pick the default trackers for first visit: rank by rating count in the
+ * current viz date range, then by sample variance (flipped values share the
+ * same variance, so raw vs inverted does not matter here). */
+function autoSelectDefaults() {
+  const from = document.getElementById('viz-from').value;
+  const to = document.getElementById('viz-to').value;
+  const stats = trackers.map((t) => {
+    const pts = collectPoints(t.id, from, to);
+    let variance = 0;
+    if (pts.length > 1) {
+      const mean = pts.reduce((s, p) => s + p.y, 0) / pts.length;
+      variance = pts.reduce((s, p) => s + (p.y - mean) ** 2, 0) / pts.length;
+    }
+    return { t, count: pts.length, variance };
+  });
+  stats.sort((a, b) => b.count - a.count || b.variance - a.variance);
+  stats.slice(0, DEFAULT_VIZ_COUNT).forEach((s) => selectedForViz.add(s.t.id));
 }
 
 function buildDateRange() {

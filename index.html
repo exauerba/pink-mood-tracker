@@ -11,6 +11,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="styles.css">
+  <link rel="stylesheet" href="onboarding.css">
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js" integrity="sha384-9nhczxUqK87bcKHh20fSQcTGD4qq5GhayNYSYWqwBkINBhOfQLg/P5HG5lF1urn4" crossorigin="anonymous"></script>
   <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns@3.0.0/dist/chartjs-adapter-date-fns.bundle.min.js" integrity="sha384-cVMg8E3QFwTvGCDuK+ET4PD341jF3W8nO1auiXfuZNQkzbUUiBGLsIQUE+b1mxws" crossorigin="anonymous"></script>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.112.3/dist/umd/supabase.min.js" integrity="sha384-l8ah+VgaWtk1mvOe9VC+OirC6qHFF4yH7l7mKRidV9MSti3E9F463bMp6ZVN4kuC" crossorigin="anonymous"></script>
@@ -37,6 +38,8 @@
         <h2 id="track-date" class="section-title"></h2>
         <button id="next-day" class="icon-btn" title="Next day">→</button>
       </div>
+
+      <div id="first-tip"></div>
 
       <div id="entry-list" class="tracker-list"></div>
 
@@ -156,6 +159,12 @@
         <button id="delete-account-btn" class="danger-btn">Delete account</button>
         <p id="delete-status" class="save-status"></p>
       </div>
+
+      <div class="backup-card">
+        <h3 class="checkin-title">First time here?</h3>
+        <p class="hint">See the quick tour again — it only takes a minute.</p>
+        <button id="help-btn" class="save-btn">Replay intro</button>
+      </div>
     </section>
   </main>
 
@@ -164,6 +173,7 @@
   <script src="charts.js"></script>
   <script src="viz-time.js"></script>
   <script src="viz-insights.js"></script>
+  <script src="onboarding.js"></script>
 
   <!-- ============ AUTH SCREEN ============ -->
   <div id="auth-screen" class="auth-screen hidden">
@@ -178,6 +188,19 @@
       <p id="auth-status" class="auth-status"></p>
       <p class="auth-hint">New here? Use Create account.</p>
       <p class="auth-rule">Usernames: letters, numbers, dots, and dashes only. No spaces.</p>
+    </div>
+  </div>
+
+  <!-- ============ ONBOARDING INTRO ============ -->
+  <div id="onboarding" class="onboarding hidden" role="dialog" aria-modal="true" aria-label="Welcome to bloom">
+    <div class="ob-card">
+      <button id="ob-skip" class="ob-skip" type="button">Skip</button>
+      <div id="ob-slides" class="ob-slides"></div>
+      <div id="ob-dots" class="ob-dots"></div>
+      <div class="ob-nav">
+        <button id="ob-back" class="mini-btn" type="button">Back</button>
+        <button id="ob-next" class="save-btn" type="button">Next</button>
+      </div>
     </div>
   </div>
 </body>

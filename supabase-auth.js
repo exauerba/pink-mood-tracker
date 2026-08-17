@@ -289,6 +289,10 @@ const signinBtn = document.getElementById('auth-signin-btn');
         password.value = '';
         setStatus('Account created. Welcome!', false);
       }
+      // Flag for the onboarding intro: consumed on the next SIGNED_IN event.
+      if (!res.error) {
+        localStorage.setItem('bloom.justSignedUp', '1');
+      }
     });
   }
 
@@ -312,6 +316,10 @@ const signinBtn = document.getElementById('auth-signin-btn');
     if (window.bloomApp && window.bloomApp.setUser) window.bloomApp.setUser(session ? session.user.id : null);
     if (event === 'SIGNED_IN' || event === 'SIGNED_OUT') {
       await applyAuthState(!!session);
+      // First-run intro opens after the app is rendered behind the overlay.
+      if (event === 'SIGNED_IN' && window.bloomOnboarding) {
+        window.bloomOnboarding.onSignedIn();
+      }
     }
   });
 });

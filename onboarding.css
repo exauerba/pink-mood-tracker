@@ -1,0 +1,349 @@
+/* ============================================================
+   bloom — onboarding intro (first-run welcome overlay)
+   Consumes the app's CSS variables only, so every palette and
+   dark mode work automatically. Motion is brief and snappy;
+   the global reduced-motion rule in styles.css kills it anyway.
+   ============================================================ */
+
+/* ---------- Overlay ---------- */
+
+.onboarding {
+  position: fixed;
+  inset: 0;
+  z-index: 2000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  background: color-mix(in srgb, var(--bg) 92%, transparent);
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity 0.3s ease, visibility 0s linear 0.3s;
+}
+
+.onboarding.open {
+  opacity: 1;
+  visibility: visible;
+  transition: opacity 0.3s ease;
+}
+
+.onboarding.hidden {
+  display: none;
+}
+
+/* ---------- Card ---------- */
+
+.ob-card {
+  position: relative;
+  width: 100%;
+  max-width: 440px;
+  background: var(--card);
+  border: 1px solid var(--hairline);
+  border-radius: 24px;
+  box-shadow: var(--shadow-hover);
+  padding: 40px 32px 26px;
+  transform: translateY(16px) scale(0.97);
+  opacity: 0;
+  transition: transform 0.34s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.3s ease;
+}
+
+.onboarding.open .ob-card {
+  transform: none;
+  opacity: 1;
+}
+
+/* ---------- Slides (stacked, cross-fade + directional slide) ---------- */
+
+.ob-slides {
+  display: grid;
+  min-height: 320px;
+}
+
+.ob-slide {
+  grid-area: 1 / 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  opacity: 0;
+  visibility: hidden;
+  transform: translateX(28px);
+  transition: opacity 0.26s cubic-bezier(0.4, 0, 0.6, 1),
+              transform 0.26s cubic-bezier(0.4, 0, 0.6, 1),
+              visibility 0s linear 0.26s;
+}
+
+.ob-slide.active {
+  opacity: 1;
+  visibility: visible;
+  transform: none;
+  transition-delay: 0s;
+}
+
+.ob-slides.is-back .ob-slide {
+  transform: translateX(-28px);
+}
+
+.ob-slides.is-back .ob-slide.active {
+  transform: none;
+}
+
+/* ---------- Art ---------- */
+
+.ob-art {
+  position: relative;
+  width: 110px;
+  height: 110px;
+  display: grid;
+  place-items: center;
+  margin-bottom: 18px;
+}
+
+.ob-halo {
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  background: radial-gradient(circle at 30% 30%,
+              color-mix(in srgb, var(--pink-200) 75%, transparent),
+              transparent 70%);
+  filter: blur(4px);
+}
+
+.ob-emoji {
+  position: relative;
+  font-size: 3.4rem;
+  line-height: 1;
+}
+
+/* Scale mock — the 1–7 row, fourth value highlighted */
+.ob-scale {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.ob-scale span {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  border: 1px solid var(--pink-200);
+  background: var(--pink-50);
+  color: var(--text-soft);
+  font-size: 0.75rem;
+  font-weight: 800;
+  display: grid;
+  place-items: center;
+}
+
+.ob-scale span.lo {
+  background: var(--pink-100);
+}
+
+.ob-scale span.mid {
+  background: var(--pink-400);
+  border-color: var(--pink-400);
+  color: var(--rose-700);
+}
+
+.ob-scale span.hi {
+  background: var(--pink-300);
+  border-color: var(--pink-300);
+  color: var(--rose-700);
+}
+
+/* Trend mock — rising line through the typical range band */
+.ob-trend {
+  position: relative;
+  width: 132px;
+  height: 88px;
+  overflow: visible;
+}
+
+.ob-trend .band {
+  fill: color-mix(in srgb, var(--pink-100) 65%, transparent);
+}
+
+.ob-trend .line {
+  fill: none;
+  stroke: var(--pink-400);
+  stroke-width: 3;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.ob-trend .dot {
+  fill: var(--rose-600);
+}
+
+/* ---------- Copy ---------- */
+
+.ob-title {
+  margin: 0 0 10px;
+  font-size: 1.45rem;
+  font-weight: 800;
+  color: var(--text);
+  outline: none;
+}
+
+.ob-body {
+  margin: 0 auto;
+  max-width: 34ch;
+  font-size: 1rem;
+  line-height: 1.55;
+  color: var(--text-soft);
+}
+
+/* ---------- Dots ---------- */
+
+.ob-dots {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 8px;
+  margin: 24px 0 20px;
+}
+
+.ob-dot {
+  width: 8px;
+  height: 8px;
+  padding: 0;
+  border: none;
+  border-radius: 999px;
+  background: var(--pink-200);
+  cursor: pointer;
+  transition: width 0.2s cubic-bezier(0.4, 0, 0.6, 1),
+              background 0.2s ease,
+              transform 0.2s ease;
+}
+
+.ob-dot:hover {
+  transform: scale(1.2);
+  background: var(--pink-300);
+}
+
+.ob-dot.active {
+  width: 22px;
+  background: var(--pink-400);
+}
+
+/* ---------- Nav ---------- */
+
+.ob-nav {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.ob-nav .save-btn {
+  flex: 1;
+  padding: 13px 20px;
+}
+
+.ob-nav .mini-btn {
+  padding: 13px 20px;
+}
+
+.ob-back-invisible {
+  visibility: hidden;
+}
+
+/* ---------- Skip ---------- */
+
+.ob-skip {
+  position: absolute;
+  top: 12px;
+  right: 16px;
+  border: none;
+  background: transparent;
+  color: var(--text-soft);
+  font-family: inherit;
+  font-size: 0.85rem;
+  font-weight: 700;
+  padding: 6px 12px;
+  border-radius: 999px;
+  cursor: pointer;
+  transition: color 0.15s ease, background 0.15s ease;
+}
+
+.ob-skip:hover {
+  color: var(--rose-600);
+  background: var(--pink-50);
+}
+
+/* ============================================================
+   First check-in tip (progressive-disclosure nudge in Track)
+   ============================================================ */
+
+.first-tip {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  background: var(--card);
+  border: 1px dashed var(--pink-300);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  padding: 14px 16px;
+  margin-bottom: 16px;
+}
+
+.first-tip .tip-emoji {
+  font-size: 1.15rem;
+  line-height: 1.4;
+}
+
+.first-tip .tip-text {
+  flex: 1;
+  font-size: 0.95rem;
+  font-weight: 700;
+  line-height: 1.45;
+  color: var(--text);
+}
+
+.first-tip .tip-text .tip-cta {
+  display: block;
+  margin-top: 3px;
+  font-size: 0.85rem;
+  font-weight: 400;
+  color: var(--text-soft);
+}
+
+.first-tip .tip-dismiss {
+  border: none;
+  background: transparent;
+  color: var(--text-soft);
+  font-size: 1rem;
+  line-height: 1;
+  padding: 4px 7px;
+  border-radius: 50%;
+  cursor: pointer;
+  transition: color 0.15s ease, background 0.15s ease;
+}
+
+.first-tip .tip-dismiss:hover {
+  color: var(--rose-600);
+  background: var(--pink-100);
+}
+
+/* ---------- Small screens ---------- */
+
+@media (max-width: 480px) {
+  .ob-card {
+    padding: 36px 20px 22px;
+  }
+
+  .ob-slides {
+    min-height: 300px;
+  }
+
+  .ob-art {
+    width: 92px;
+    height: 92px;
+  }
+
+  .ob-emoji {
+    font-size: 3rem;
+  }
+}

@@ -15,6 +15,16 @@ async function pull() {
   if (!user) return;
 
   try {
+    // Pull tombstones first so deletions made on other devices are honored.
+    const { data: deletedRows, error: delError } = await window.bloomClient
+      .from('deleted_trackers')
+      .select('id')
+      .eq('user_id', user.id);
+    if (delError) return { error: delError };
+    if (window.bloomApp && window.bloomApp.mergeDeleted) {
+      window.bloomApp.mergeDeleted((deletedRows || []).map((r) => r.id));
+    }
+
     const { data: rows, error } = await window.bloomClient
       .from('trackers')
       .select('*')
@@ -93,6 +103,38 @@ async function pushTrackers(trackers) {
       .eq('user_id', user.id)
       .in('id', stale);
     if (delError) return { error: delError };
+  }
+
+  // Propagate per-user tombstones so deletions reach other devices.
+  if (window.bloomApp && window.bloomApp.deletedIds) {
+    const tombIds = window.bloomApp.deletedIds();
+    if (tombIds.length > 0) {
+      const { error: tombError } = await window.bloomClient
+        .from('deleted_trackers')
+        .upsert(tombIds.map((id) => ({ user_id: user.id, id })), { onConflict: 'user_id,id' });
+      if (tombError) return { error: tombError };
+    }
+  }
+
+  // Clear cloud tombstones for trackers that exist again (re-added). This must
+  // query the cloud directly: the app forgets the local tombstone before
+  // pushing, so the local list is already empty by the time we get here.
+  const revived = trackers.map((t) => t.id);
+  if (revived.length > 0) {
+    const { data: cloudTomb, error: ctError } = await window.bloomClient
+      .from('deleted_trackers')
+      .select('id')
+      .eq('user_id', user.id)
+      .in('id', revived);
+    if (ctError) return { error: ctError };
+    if (cloudTomb && cloudTomb.length > 0) {
+      const { error: revError } = await window.bloomClient
+        .from('deleted_trackers')
+        .delete()
+        .eq('user_id', user.id)
+        .in('id', cloudTomb.map((r) => r.id));
+      if (revError) return { error: revError };
+    }
   }
   return { ok: true };
 }

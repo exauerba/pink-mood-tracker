@@ -73,6 +73,9 @@ function loadTrackers() {
       backfilled = true;
     }
   });
+  // Drop trackers this user deleted (tombstoned) so they never resurface,
+  // even if stale local or cloud data still contains them.
+  saved = saved.filter((t) => !isDeleted(t.id));
   // Merge: keep saved trackers, append any new defaults not already present.
   const ids = new Set(saved.map((t) => t.id));
   let added = false;
@@ -902,6 +905,17 @@ window.bloomApp = {
   },
   isDeleted,
   rememberDeleted,
+  deletedIds,
+  // Merge tombstones pulled from the cloud into this device's list so
+  // deletions made elsewhere are honored here too.
+  mergeDeleted(ids) {
+    if (!ids || ids.length === 0) return;
+    const key = deletedKey();
+    const merged = deletedIds();
+    let changed = false;
+    ids.forEach((id) => { if (!merged.includes(id)) { merged.push(id); changed = true; } });
+    if (changed) localStorage.setItem(key, JSON.stringify(merged));
+  },
   setUser(uid) { currentUid = uid || null; },
   clearLocal() {
     localStorage.removeItem(STORE_TRACKERS);

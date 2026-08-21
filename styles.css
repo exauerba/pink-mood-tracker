@@ -468,6 +468,15 @@ main {
   color: var(--text);
 }
 
+/* Scale-toggle pills live in the visualize toolbar. They intentionally use a
+ * distinct class (not `.scale-btn`) so they never inherit the circular
+ * Track-view rating-button sizing (`max-width: 52px; aspect-ratio: 1`). */
+.scale-toggle.active {
+  background: var(--pink-200);
+  border-color: var(--pink-200);
+  color: var(--text);
+}
+
 #viz-custom-months {
   display: flex;
   align-items: center;
@@ -981,6 +990,7 @@ select:focus-visible {
 .group-select:focus-visible,
 .auth-input:focus-visible,
 .scale-btn:focus-visible,
+.scale-toggle:focus-visible,
 .tracker-card textarea:focus-visible {
   outline: 3px solid var(--ring);
   outline-offset: 2px;

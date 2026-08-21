@@ -11,11 +11,16 @@ let vizInitialized = false;
 let activeRange = '1m';
 let rangeControls = false;
 
+/* "Up always good" (default) flips "bad" trackers so up reads as better;
+ * "raw" plots the actual rating entered. Persisted so the choice sticks. */
+let upAlwaysGood = localStorage.getItem('bloom.scale') !== 'raw';
+let scaleControls = false;
+
 /* Default selection on first visit: the N trackers with the most ratings
  * in range, ties broken by higher rating variance. */
 const DEFAULT_VIZ_COUNT = 5;
 
-function isFlipped(t) { return t.direction === 'bad'; }
+function isFlipped(t) { return upAlwaysGood && t.direction === 'bad'; }
 function flipValue(v) { return 8 - v; }
 
 /* Draws a shaded "normal" band (mean ± 1 SD of all raw values in range)
@@ -75,6 +80,8 @@ function renderVisualize() {
   buildDateRange();
   buildPills();
   buildRangeControls();
+  buildScaleControls();
+  updateHint();
   renderChart();
   if (window.vizTime) window.vizTime.render();
   if (window.vizInsights) window.vizInsights.render();
@@ -214,6 +221,41 @@ function clearActiveRange() {
   activeRange = null;
   document.querySelectorAll('#viz-range-toolbar .range-btn').forEach((b) => b.classList.remove('active'));
   renderVisualize();
+}
+
+/* Wiring the scale toggle once (guarded) so listeners never stack. */
+function buildScaleControls() {
+  if (scaleControls) return;
+  scaleControls = true;
+  const toolbar = document.getElementById('viz-scale-toolbar');
+  if (!toolbar) return;
+  toolbar.addEventListener('click', (e) => {
+    const btn = e.target.closest('.scale-toggle');
+    if (btn) setScale(btn.dataset.scale);
+  });
+  reflectScale();
+}
+
+function setScale(mode) {
+  upAlwaysGood = mode !== 'raw';
+  localStorage.setItem('bloom.scale', upAlwaysGood ? 'up' : 'raw');
+  reflectScale();
+  renderVisualize();
+}
+
+function reflectScale() {
+  document.querySelectorAll('#viz-scale-toolbar .scale-toggle').forEach((b) => {
+    b.classList.toggle('active', b.dataset.scale === (upAlwaysGood ? 'up' : 'raw'));
+  });
+}
+
+/* Keep the caption in sync with how the Y-axis is currently read. */
+function updateHint() {
+  const hint = document.getElementById('viz-hint');
+  if (!hint) return;
+  hint.textContent = upAlwaysGood
+    ? 'Up always means better — trackers marked ↺ are inverted (e.g. anxiety). Lines show the 7-day average. The shaded band is your typical range — a single day outside it is normal ups and downs, not a trend.'
+    : 'Showing actual ratings — the number you entered, even for trackers where higher is usually worse. Lines show the 7-day average. The shaded band is your typical range.';
 }
 
 /* Collect {x: date+time, y: rating} points for one tracker in range.

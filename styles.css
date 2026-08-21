@@ -468,6 +468,12 @@ main {
   color: var(--text);
 }
 
+.scale-btn.active {
+  background: var(--pink-200);
+  border-color: var(--pink-200);
+  color: var(--text);
+}
+
 #viz-custom-months {
   display: flex;
   align-items: center;

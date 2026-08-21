@@ -94,12 +94,19 @@
           <label>To</label>
           <input type="date" id="viz-to">
         </div>
+        <div class="control-group">
+          <label>Scale</label>
+          <div class="pill-toolbar" id="viz-scale-toolbar">
+            <button class="pill scale-btn active" data-scale="up">Up always good</button>
+            <button class="pill scale-btn" data-scale="raw">Actual #'s</button>
+          </div>
+        </div>
       </div>
 
       <div class="chart-card">
         <canvas id="trend-chart"></canvas>
       </div>
-      <p class="chart-hint">Up always means better — trackers marked ↺ are inverted (e.g. anxiety). Lines show the 7-day average. The shaded band is your typical range — a single day outside it is normal ups and downs, not a trend.</p>
+      <p id="viz-hint" class="chart-hint">Up always means better — trackers marked ↺ are inverted (e.g. anxiety). Lines show the 7-day average. The shaded band is your typical range — a single day outside it is normal ups and downs, not a trend.</p>
       <p id="viz-empty" class="empty-msg hidden">No data yet — save a few days in the Track view and your patterns will bloom here.</p>
 
       <div class="chart-card viz-card">

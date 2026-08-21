@@ -4,13 +4,27 @@
 
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 
+// The browser blocks cross-origin calls without CORS headers. The app runs on
+// a different origin than the Supabase project, so every response (including
+// the OPTIONS preflight) must carry these. Auth is via the Authorization
+// header, so a wildcard origin is safe.
+const CORS_HEADERS = {
+  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Headers': 'authorization, apikey, x-client-info, content-type',
+  'Access-Control-Allow-Methods': 'POST, OPTIONS',
+};
+
 const json = (obj, status) =>
   new Response(JSON.stringify(obj), {
     status,
-    headers: { 'Content-Type': 'application/json' },
+    headers: { 'Content-Type': 'application/json', ...CORS_HEADERS },
   });
 
 Deno.serve(async (req) => {
+  if (req.method === 'OPTIONS') {
+    return new Response(null, { status: 204, headers: CORS_HEADERS });
+  }
+
   const authorization = req.headers.get('Authorization');
   if (!authorization) {
     return json({ error: 'Unauthorized' }, 401);

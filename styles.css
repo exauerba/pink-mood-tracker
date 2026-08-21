@@ -996,6 +996,22 @@ select:focus-visible {
   outline-offset: 2px;
 }
 
+/* ---------- Update banner ---------- */
+.update-banner {
+  position: fixed;
+  top: 12px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 1000;
+  padding: 10px 18px;
+  border-radius: 999px;
+  background: var(--accent, #f472b6);
+  color: #fff;
+  font-size: 0.9rem;
+  font-weight: 600;
+  box-shadow: var(--shadow-hover, 0 6px 16px rgba(0, 0, 0, 0.15));
+}
+
 /* ---------- Reduced motion ---------- */
 @media (prefers-reduced-motion: reduce) {
   *,

@@ -873,13 +873,45 @@ document.getElementById('import-file').addEventListener('change', (e) => {
 applyPalette(localStorage.getItem('bloom.palette') || 'blush');
 renderTrack();
 
-/* Register the service worker so the app can be installed and work offline. */
+/* Register the service worker so the app can be installed and work offline.
+ * Also watch for updates: when a new version is deployed, the browser installs
+ * a fresh service worker. We show a small banner and reload automatically so
+ * users always get the latest code without ever clearing cookies/site data. */
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', () => {
-    navigator.serviceWorker.register('sw.js').catch((err) => {
+    navigator.serviceWorker.register('sw.js').then((reg) => {
+      // A new service worker finished installing and is waiting to activate.
+      reg.addEventListener('updatefound', () => {
+        const next = reg.installing;
+        if (!next) return;
+        next.addEventListener('statechange', () => {
+          if (next.state === 'installed' && navigator.serviceWorker.controller) {
+            showUpdateBanner();
+          }
+        });
+      });
+    }).catch((err) => {
       console.warn('Service worker registration failed:', err);
     });
+
+    // The new service worker took control of this page — reload once so the
+    // user lands on the fresh version.
+    navigator.serviceWorker.addEventListener('controllerchange', () => {
+      window.location.reload();
+    });
   });
+}
+
+/* Small "new version available" banner. Auto-reloads after a short delay so
+ * the update lands without any user action. */
+function showUpdateBanner() {
+  if (document.getElementById('update-banner')) return;
+  const banner = document.createElement('div');
+  banner.id = 'update-banner';
+  banner.className = 'update-banner';
+  banner.textContent = 'A new version is ready — updating…';
+  document.body.appendChild(banner);
+  setTimeout(() => window.location.reload(), 1500);
 }
 
 /* ---------- Sync hook ---------- */

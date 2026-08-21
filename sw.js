@@ -3,6 +3,8 @@
  * Strategy: cache-first for app files and CDN assets.
  */
 
+// Cache version. The deploy workflow rewrites this to a fresh timestamp on
+// every push so the service worker always updates and old caches are purged.
 const CACHE = 'bloom-v11';
 
 // Files needed to run the app offline.

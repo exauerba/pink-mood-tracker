@@ -1,0 +1,48 @@
+name: Deploy to GitHub Pages
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+# Only one deploy at a time; cancel in-progress runs if a new push lands.
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      # Bump the service-worker cache version on every deploy so the browser
+      # always installs a fresh service worker and never serves stale assets.
+      # This is what lets users get updates without clearing cookies/site data.
+      - name: Bump service worker cache version
+        run: |
+          VERSION="bloom-$(date +%s)"
+          sed -i "s/const CACHE = 'bloom-v[0-9]*';/const CACHE = '$VERSION';/" sw.js
+          echo "Cache version set to $VERSION"
+
+      - name: Upload Pages artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: .
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4

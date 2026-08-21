@@ -230,7 +230,7 @@ function buildScaleControls() {
   const toolbar = document.getElementById('viz-scale-toolbar');
   if (!toolbar) return;
   toolbar.addEventListener('click', (e) => {
-    const btn = e.target.closest('.scale-btn');
+    const btn = e.target.closest('.scale-toggle');
     if (btn) setScale(btn.dataset.scale);
   });
   reflectScale();
@@ -244,7 +244,7 @@ function setScale(mode) {
 }
 
 function reflectScale() {
-  document.querySelectorAll('#viz-scale-toolbar .scale-btn').forEach((b) => {
+  document.querySelectorAll('#viz-scale-toolbar .scale-toggle').forEach((b) => {
     b.classList.toggle('active', b.dataset.scale === (upAlwaysGood ? 'up' : 'raw'));
   });
 }

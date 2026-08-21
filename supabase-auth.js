@@ -187,7 +187,16 @@ const signinBtn = document.getElementById('auth-signin-btn');
 
   const applyAuthState = async (loggedIn) => {
     if (loggedIn) {
-      if (window.bloomSync) await window.bloomSync.pull();
+      if (window.bloomSync) {
+        const res = await window.bloomSync.pull();
+        if (res && res.error) {
+          const status = document.getElementById('export-status');
+          if (status) {
+            status.textContent = 'Couldn\u2019t load your cloud data \u2014 showing what\u2019s on this device.';
+            setTimeout(() => { status.textContent = ''; }, 6000);
+          }
+        }
+      }
       hideAuth();
       if (typeof renderTrack === 'function') renderTrack();
       if (typeof renderManage === 'function') renderManage();

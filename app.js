@@ -845,6 +845,11 @@ document.getElementById('import-file').addEventListener('change', (e) => {
         return;
       }
 
+      // Importing a backup restores trackers that may have been deleted
+      // earlier; clear any stale tombstones so the next sync doesn't
+      // re-delete them from the cloud.
+      for (const t of sanitizedTrackers) forgetDeleted(t.id);
+
       trackers = sanitizedTrackers;
       entries = migrate(sanitizedEntries);
       saveTrackers(trackers);

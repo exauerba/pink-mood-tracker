@@ -37,6 +37,12 @@ const normalBandPlugin = {
     ctx.save();
     ctx.fillStyle = band.color;
     ctx.fillRect(chartArea.left, yTop, chartArea.right - chartArea.left, yBottom - yTop);
+    // Soft dashed outline so the band reads as a "typical range" envelope
+    // rather than a faint smudge behind the lines.
+    ctx.strokeStyle = band.borderColor;
+    ctx.lineWidth = 1.5;
+    ctx.setLineDash([6, 4]);
+    ctx.strokeRect(chartArea.left, yTop, chartArea.right - chartArea.left, yBottom - yTop);
     ctx.restore();
   },
 };
@@ -188,7 +194,8 @@ function applyRange(mode) {
   document.querySelectorAll('#viz-range-toolbar .range-btn').forEach((b) => {
     b.classList.toggle('active', b.dataset.range === mode);
   });
-  document.getElementById('viz-custom-months').classList.toggle('hidden', mode !== 'custom');
+  const customFields = document.getElementById('viz-custom-fields');
+  if (customFields) customFields.classList.toggle('hidden', mode !== 'custom');
 
   renderVisualize();
 }
@@ -220,6 +227,8 @@ function buildRangeControls() {
 function clearActiveRange() {
   activeRange = null;
   document.querySelectorAll('#viz-range-toolbar .range-btn').forEach((b) => b.classList.remove('active'));
+  const customFields = document.getElementById('viz-custom-fields');
+  if (customFields) customFields.classList.remove('hidden');
   renderVisualize();
 }
 
@@ -254,7 +263,7 @@ function updateHint() {
   const hint = document.getElementById('viz-hint');
   if (!hint) return;
   hint.textContent = upAlwaysGood
-    ? 'Up always means better — trackers marked ↺ are inverted (e.g. anxiety). Lines show the 7-day average. The shaded band is your typical range — a single day outside it is normal ups and downs, not a trend.'
+    ? 'Higher = better — trackers marked ↺ are inverted (e.g. anxiety), so up is always good. Lines show the 7-day average. The shaded band is your typical range — a single day outside it is normal ups and downs, not a trend.'
     : 'Showing actual ratings — the number you entered, even for trackers where higher is usually worse. Lines show the 7-day average. The shaded band is your typical range.';
 }
 
@@ -333,6 +342,25 @@ function normalBand(selectedTrackers, from, to) {
   };
 }
 
+/* Pick a y-axis extent that hugs the actual data instead of always spanning
+ * 1–7, so ~40% of the chart isn't dead space. Rounds to the nearest half-step
+ * and clamps to the 1–7 scale. */
+function niceYRange(values) {
+  const nums = values.filter((v) => typeof v === 'number' && isFinite(v));
+  if (nums.length === 0) return { min: 1, max: 7 };
+  let lo = Math.min(...nums);
+  let hi = Math.max(...nums);
+  const pad = 0.5;
+  let min = Math.max(1, Math.floor(lo - pad));
+  let max = Math.min(7, Math.ceil(hi + pad));
+  if (max - min < 2) {
+    const mid = (min + max) / 2;
+    min = Math.max(1, Math.floor(mid - 1));
+    max = Math.min(7, Math.ceil(mid + 1));
+  }
+  return { min, max };
+}
+
 function renderChart() {
   const from = document.getElementById('viz-from').value;
   const to = document.getElementById('viz-to').value;
@@ -362,12 +390,21 @@ function renderChart() {
       borderColor: color,
       backgroundColor: color + '22',
       borderWidth: 2.5,
+      borderDash: flipped ? [6, 4] : undefined,
       pointRadius: 0,
       pointHoverRadius: 0,
       spanGaps: true,
       tension: 0.4,
     };
   });
+
+  // Autoscale y to the visible line/raw data so the chart isn't half-empty.
+  const yValues = [];
+  datasets.forEach((d) => {
+    d.data.forEach((p) => yValues.push(p.y));
+    if (d.raw) d.raw.forEach((p) => yValues.push(p.y));
+  });
+  const yRange = niceYRange(yValues);
 
   trendChart = new Chart(canvas, {
     type: 'line',
@@ -383,7 +420,12 @@ function renderChart() {
       },
       plugins: {
         normalBand: band
-          ? { lo: band.lo, hi: band.hi, color: 'rgba(244,114,182,0.10)' }
+          ? {
+              lo: band.lo,
+              hi: band.hi,
+              color: 'rgba(244,114,182,0.16)',
+              borderColor: 'rgba(208,172,183,0.55)',
+            }
           : null,
         legend: {
           labels: {
@@ -419,8 +461,8 @@ function renderChart() {
       },
       scales: {
         y: {
-          min: 1,
-          max: 7,
+          min: yRange.min,
+          max: yRange.max,
           ticks: { stepSize: 1, color: '#9d7b8c', font: { family: 'Nunito' } },
           grid: { color: '#fce7f3' },
         },

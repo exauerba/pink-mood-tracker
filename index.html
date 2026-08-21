@@ -81,23 +81,27 @@
             <button class="pill range-btn" data-range="3m">3M</button>
             <button class="pill range-btn" data-range="custom">Custom</button>
           </div>
-          <div id="viz-custom-months" class="custom-months hidden">
-            <label for="viz-months">Months back</label>
-            <input type="number" id="viz-months" min="1" max="24" value="6">
+          <div id="viz-custom-fields" class="custom-months hidden">
+            <div class="custom-months-row">
+              <label for="viz-months">Months back</label>
+              <input type="number" id="viz-months" min="1" max="24" value="6">
+            </div>
+            <div class="custom-dates-row">
+              <div class="control-group">
+                <label>From</label>
+                <input type="date" id="viz-from">
+              </div>
+              <div class="control-group">
+                <label>To</label>
+                <input type="date" id="viz-to">
+              </div>
+            </div>
           </div>
-        </div>
-        <div class="control-group">
-          <label>From</label>
-          <input type="date" id="viz-from">
-        </div>
-        <div class="control-group">
-          <label>To</label>
-          <input type="date" id="viz-to">
         </div>
         <div class="control-group">
           <label>Scale</label>
           <div class="pill-toolbar" id="viz-scale-toolbar">
-            <button class="pill scale-toggle active" data-scale="up">Up always good</button>
+            <button class="pill scale-toggle active" data-scale="up">Higher = better</button>
             <button class="pill scale-toggle" data-scale="raw">Actual #'s</button>
           </div>
         </div>
@@ -106,23 +110,40 @@
       <div class="chart-card">
         <canvas id="trend-chart"></canvas>
       </div>
-      <p id="viz-hint" class="chart-hint">Up always means better — trackers marked ↺ are inverted (e.g. anxiety). Lines show the 7-day average. The shaded band is your typical range — a single day outside it is normal ups and downs, not a trend.</p>
+      <p id="viz-hint" class="chart-hint">Higher = better — trackers marked ↺ are inverted (e.g. anxiety), so up is always good. Lines show the 7-day average. The shaded band is your typical range — a single day outside it is normal ups and downs, not a trend.</p>
       <p id="viz-empty" class="empty-msg hidden">No data yet — save a few days in the Track view and your patterns will bloom here.</p>
 
-      <div class="chart-card viz-card">
-        <h3 class="viz-card-title">By time of day</h3>
-        <canvas id="time-chart"></canvas>
-        <p id="time-empty" class="empty-msg hidden">Not enough check-ins yet to see time-of-day patterns.</p>
-      </div>
+      <div class="insights-grid">
+        <div class="viz-card insight-card" id="helped-card">
+          <h3 class="viz-card-title">What helped</h3>
+          <div id="helped-content" class="helped-content">
+            <div class="helped-metric">
+              <span id="helped-delta" class="helped-delta"></span>
+              <span id="helped-delta-label" class="helped-delta-label"></span>
+            </div>
+            <p id="helped-sentence" class="helped-sentence"></p>
+          </div>
+          <p id="helped-empty" class="empty-msg hidden">Not enough data yet to compare coping days.</p>
+        </div>
 
-      <div class="viz-card">
-        <h3 class="viz-card-title">What helped</h3>
-        <p id="helped-text" class="helped-text"></p>
-        <p id="helped-empty" class="empty-msg hidden">Not enough data yet to compare coping days.</p>
+        <div class="chart-card viz-card time-card">
+          <h3 class="viz-card-title">By time of day</h3>
+          <canvas id="time-chart"></canvas>
+          <p id="time-empty" class="empty-msg hidden">Not enough check-ins yet to see time-of-day patterns.</p>
+        </div>
       </div>
 
       <div class="viz-card">
         <h3 class="viz-card-title">Links between trackers</h3>
+        <div class="corr-legend">
+          <span class="corr-chips">
+            <span class="chip chip-pink"></span>
+            <span class="chip-label">Moves together</span>
+            <span class="chip chip-blue"></span>
+            <span class="chip-label">Moves apart</span>
+          </span>
+          <span class="corr-legend-hint">Deeper color = stronger link</span>
+        </div>
         <div id="corr-wrap"></div>
         <p class="corr-note">Correlation is not causation. Small samples can mislead. This is your own tracking, not a controlled study.</p>
       </div>

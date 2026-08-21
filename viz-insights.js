@@ -53,15 +53,19 @@
   /* ---------------- Panel 1: What helped ---------------- */
 
   function renderHelped(from, to) {
-    const content = document.getElementById('helped-text');
+    const card = document.getElementById('helped-card');
+    const content = document.getElementById('helped-content');
     const empty = document.getElementById('helped-empty');
+    const deltaEl = document.getElementById('helped-delta');
+    const deltaLabelEl = document.getElementById('helped-delta-label');
+    const sentenceEl = document.getElementById('helped-sentence');
 
     const coping = trackers.filter((t) => t.group === 'coping');
     const anxiety =
       trackers.find((t) => t.id === 'anxiety' || String(t.name).toLowerCase() === 'anxiety') ||
       fallbackTracker(from, to);
 
-    if (!content || !empty) return;
+    if (!content || !empty || !card) return;
     if (!anxiety || coping.length === 0) return;
 
     const copingIds = new Set(coping.map((t) => t.id));
@@ -90,6 +94,7 @@
 
     if (copingDays < MIN_HELPED_DAYS || otherDays < MIN_HELPED_DAYS) {
       empty.classList.remove('hidden');
+      card.classList.remove('helped', 'hurt');
       content.classList.add('hidden');
       return;
     }
@@ -98,16 +103,32 @@
     const otherMean = otherSum / otherDays;
     const diff = otherMean - copingMean; // positive => coping days lower
 
+    let state;
+    let delta;
+    let deltaLabel;
     let sentence;
     if (Math.abs(diff) < 0.3) {
+      state = 'neutral';
+      delta = '≈';
+      deltaLabel = 'no clear change';
       sentence = `Coping days and other days showed similar anxiety levels (${copingDays} vs ${otherDays} days).`;
     } else if (diff > 0) {
+      state = 'helped';
+      delta = diff.toFixed(1);
+      deltaLabel = 'points lower with coping';
       sentence = `On days you used coping skills, ${anxiety.name} averaged ${diff.toFixed(1)} points lower (${copingDays} coping days vs ${otherDays} other days).`;
     } else {
+      state = 'hurt';
+      delta = Math.abs(diff).toFixed(1);
+      deltaLabel = 'points higher with coping';
       sentence = `On days you used coping skills, ${anxiety.name} averaged ${Math.abs(diff).toFixed(1)} points higher (${copingDays} vs ${otherDays} days).`;
     }
 
-    content.textContent = sentence;
+    if (deltaEl) deltaEl.textContent = delta;
+    if (deltaLabelEl) deltaLabelEl.textContent = deltaLabel;
+    if (sentenceEl) sentenceEl.textContent = sentence;
+    card.classList.remove('helped', 'hurt', 'neutral');
+    card.classList.add(state);
     empty.classList.add('hidden');
     content.classList.remove('hidden');
   }
@@ -216,7 +237,7 @@
 
         if (sa.id === sb.id) {
           td.textContent = '—';
-          td.style.background = '#f1f5f9';
+          td.style.background = 'var(--pink-100)';
           tr.appendChild(td);
           return;
         }
@@ -228,7 +249,7 @@
 
         if (paired.length < MIN_PAIRED_DAYS) {
           td.textContent = '—';
-          td.style.background = '#f1f5f9';
+          td.style.background = 'var(--pink-50)';
         } else {
           const rho = spearman(
             paired.map((p) => p[0]),
@@ -236,7 +257,7 @@
           );
           td.textContent = rho.toFixed(2);
           if (Math.abs(rho) >= NEAR_ZERO) {
-            const alpha = Math.min(0.9, Math.abs(rho)).toFixed(2);
+            const alpha = Math.max(0.15, Math.min(0.9, Math.abs(rho))).toFixed(2);
             td.style.background = `rgba(${rho > 0 ? PINK : BLUE},${alpha})`;
           }
         }

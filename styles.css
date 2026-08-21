@@ -477,21 +477,40 @@ main {
   color: var(--text);
 }
 
-#viz-custom-months {
-  display: flex;
-  align-items: center;
-  gap: 10px;
+#viz-custom-fields {
   margin-top: 4px;
 }
 
-#viz-custom-months label {
+#viz-custom-fields .custom-months-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 10px;
+}
+
+#viz-custom-fields .custom-months-row label {
   margin: 0;
   font-size: 0.85rem;
   font-weight: 700;
   color: var(--text-soft);
 }
 
-#viz-custom-months input[type="number"] {
+#viz-custom-fields .custom-dates-row {
+  display: flex;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+#viz-custom-fields .custom-dates-row .control-group {
+  flex: 1;
+  min-width: 150px;
+}
+
+#viz-custom-fields .custom-dates-row .control-group label {
+  margin: 0 0 6px;
+}
+
+#viz-custom-fields input[type="number"] {
   width: 80px;
   border: 1px solid var(--pink-100);
   border-radius: 10px;
@@ -518,7 +537,7 @@ main {
   padding: 18px;
   box-shadow: var(--shadow);
   position: relative;
-  height: 460px;
+  height: 380px;
 }
 
 #trend-chart {
@@ -557,11 +576,87 @@ main {
   height: 100%;
 }
 
-.helped-text {
-  color: var(--text);
-  font-size: 1rem;
+/* "What helped" — promoted anchor insight (big metric + accent bar).
+ * A 4px left accent bar signals direction; the card gets a soft tinted wash
+ * so it reads as the headline finding rather than a plain paragraph. */
+.insight-card {
+  position: relative;
+  overflow: hidden;
+  padding-left: 22px; /* room for the accent bar */
+}
+
+.insight-card::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 4px;
+  border-radius: 4px 0 0 4px;
+  background: var(--pink-300);
+}
+
+.insight-card.helped { background: linear-gradient(135deg, var(--card), #f1f4ef); }
+.insight-card.helped::before { background: #7fae8b; }
+.insight-card.hurt { background: linear-gradient(135deg, var(--card), #faedf0); }
+.insight-card.hurt::before { background: var(--rose-600); }
+.insight-card.neutral { background: var(--card); }
+
+.helped-metric {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  margin-bottom: 4px;
+  flex-wrap: wrap;
+}
+
+.helped-delta {
+  font-size: 2.2rem;
+  font-weight: 800;
+  line-height: 1;
+  color: var(--rose-700);
+}
+
+.insight-card.helped .helped-delta { color: #5c8a67; }
+.insight-card.hurt .helped-delta { color: var(--rose-600); }
+
+.helped-delta-label {
+  font-size: 0.9rem;
   font-weight: 700;
-  line-height: 1.5;
+  color: var(--text-soft);
+}
+
+.helped-sentence {
+  color: var(--text-soft);
+  font-size: 0.95rem;
+  line-height: 1.55;
+  margin: 0;
+}
+
+/* Insights layout: pair the "What helped" anchor with "By time of day"
+ * side by side on wider screens, stacking on mobile. The trend chart and
+ * the correlation table each stay full-width. */
+.insights-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 18px;
+  margin-top: 18px;
+}
+
+.insights-grid > .viz-card { margin-top: 0; }
+
+/* "By time of day" chart keeps a fixed height so Chart.js fills it;
+ * the anchor card stretches to match on the paired row. */
+.insights-grid .time-card {
+  min-height: 300px;
+  height: 340px;
+}
+
+@media (min-width: 640px) {
+  .insights-grid {
+    grid-template-columns: 1fr 1fr;
+    align-items: stretch;
+  }
 }
 
 .corr-note {
@@ -570,10 +665,18 @@ main {
   margin-top: 12px;
 }
 
+/* The heatmap is wider than a phone card when ~5 trackers are shown, so let
+ * it scroll inside its own card instead of stretching the page. */
+#corr-wrap {
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
 .corr-table {
   width: 100%;
   border-collapse: collapse;
   font-size: 0.8rem;
+  min-width: 320px; /* keep cells readable / not squashed on tiny screens */
 }
 
 .corr-table th,
@@ -601,7 +704,39 @@ main {
 .corr-cell {
   font-weight: 700;
   color: var(--text);
+  font-size: 0.85rem;
 }
+
+/* Legend explaining the pink / blue heatmap in the links table. */
+.corr-legend {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 12px;
+  font-size: 0.8rem;
+  color: var(--text-soft);
+}
+
+.corr-chips {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.chip {
+  display: inline-block;
+  width: 14px;
+  height: 14px;
+  border-radius: 4px;
+}
+
+.chip-pink { background: rgba(236, 72, 153, 0.55); }
+.chip-blue { background: rgba(56, 189, 248, 0.55); margin-left: 10px; }
+
+.chip-label { color: var(--text-soft); font-weight: 600; }
+.corr-legend-hint { color: var(--text-soft); font-weight: 600; }
 
 /* ---------- Manage ---------- */
 .tracker-card.manage {

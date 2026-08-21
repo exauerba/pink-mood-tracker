@@ -17,6 +17,21 @@ function dayPartIndex(hour) {
   return 3; // Night (22-4)
 }
 
+/* Autoscale y for the by-time chart: hug the data, round to whole steps,
+ * keep at least a 2-step span, clamp to 1-7. */
+function tinyYRange(values) {
+  const nums = values.filter((v) => typeof v === 'number' && isFinite(v));
+  if (nums.length === 0) return { min: 1, max: 7 };
+  let min = Math.max(1, Math.floor(Math.min(...nums) - 0.5));
+  let max = Math.min(7, Math.ceil(Math.max(...nums) + 0.5));
+  if (max - min < 2) {
+    const mid = (min + max) / 2;
+    min = Math.max(1, Math.floor(mid - 1));
+    max = Math.min(7, Math.ceil(mid + 1));
+  }
+  return { min, max };
+}
+
 window.vizTime = {
   render() {
     if (typeof Chart === 'undefined') return;
@@ -71,6 +86,11 @@ window.vizTime = {
       };
     });
 
+    // Autoscale y so averages cluster mid-chart instead of hugging the bottom.
+    const yValues = [];
+    datasets.forEach((d) => d.data.forEach((v) => { if (typeof v === 'number') yValues.push(v); }));
+    const yRange = tinyYRange(yValues);
+
     timeChart = new Chart(canvas, {
       type: 'line',
       data: { labels: DAYS, datasets },
@@ -83,8 +103,8 @@ window.vizTime = {
         },
         scales: {
           y: {
-            min: 1,
-            max: 7,
+            min: yRange.min,
+            max: yRange.max,
             ticks: { stepSize: 1, color: '#9d7b8c', font: { family: 'Nunito' } },
             grid: { color: '#fce7f3' },
           },

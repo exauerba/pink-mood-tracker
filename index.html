@@ -2,11 +2,17 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta name="theme-color" content="#f6f4f4">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <meta name="theme-color" content="#f472b6">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <meta name="apple-mobile-web-app-title" content="bloom">
   <meta http-equiv="Content-Security-Policy" content="default-src 'self' blob:; script-src 'self' https://cdn.jsdelivr.net; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; connect-src 'self' https://xxtavjeetzvtlhwoenho.supabase.co; img-src 'self' data: blob:; object-src 'none'; base-uri 'self'; form-action 'self'">
   <link rel="manifest" href="manifest.webmanifest">
+  <link rel="icon" type="image/x-icon" href="bloom.ico">
   <title>bloom — mood & symptom tracker</title>
+  <meta name="description" content="bloom — a private, pastel-pink mood &amp; symptom tracker. Rate how you feel, spot your patterns, and see what helps, in a few taps a day.">
+  <link rel="apple-touch-icon" sizes="180x180" href="icons/icon-192.png">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800&display=swap" rel="stylesheet">
@@ -41,8 +47,6 @@
 
       <div id="first-tip"></div>
 
-      <div id="entry-list" class="tracker-list"></div>
-
       <div class="checkin-card">
         <h3 id="checkin-title" class="checkin-title">New check-in</h3>
         <div class="time-row">
@@ -58,6 +62,8 @@
         <button id="cancel-edit" class="cancel-btn hidden">Cancel</button>
         <p id="save-status" class="save-status"></p>
       </div>
+
+      <div id="entry-list" class="tracker-list"></div>
     </section>
 
     <!-- ============ VISUALIZE VIEW ============ -->
@@ -137,9 +143,9 @@
         <h3 class="viz-card-title">Links between trackers</h3>
         <div class="corr-legend">
           <span class="corr-chips">
-            <span class="chip chip-pink"></span>
+            <span class="corr-chip chip-pink"></span>
             <span class="chip-label">Moves together</span>
-            <span class="chip chip-blue"></span>
+            <span class="corr-chip chip-blue"></span>
             <span class="chip-label">Moves apart</span>
           </span>
           <span class="corr-legend-hint">Deeper color = stronger link</span>

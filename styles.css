@@ -22,12 +22,19 @@
 
 * { box-sizing: border-box; margin: 0; padding: 0; }
 
+html {
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
+}
+
 body {
   font-family: 'Nunito', system-ui, sans-serif;
   background: linear-gradient(160deg, var(--bg), var(--pink-100));
   color: var(--text);
   min-height: 100vh;
-  padding-bottom: 40px;
+  min-height: 100dvh;
+  padding-bottom: calc(40px + env(safe-area-inset-bottom));
+  overflow-x: clip;
 }
 
 /* ---------- Header ---------- */
@@ -37,7 +44,7 @@ body {
   justify-content: space-between;
   flex-wrap: wrap;
   gap: 12px;
-  padding: 20px 24px;
+  padding: calc(20px + env(safe-area-inset-top)) max(24px, env(safe-area-inset-right)) 20px max(24px, env(safe-area-inset-left));
   max-width: 720px;
   margin: 0 auto;
 }
@@ -80,7 +87,7 @@ body {
 main {
   max-width: 720px;
   margin: 0 auto;
-  padding: 0 20px;
+  padding: 0 max(20px, env(safe-area-inset-right)) 0 max(20px, env(safe-area-inset-left));
 }
 
 .view { display: none; }
@@ -122,7 +129,9 @@ main {
   transition: transform 0.15s cubic-bezier(0.4, 0, 0.6, 1);
 }
 
-.icon-btn:hover { transform: scale(1.08); }
+@media (hover: hover) {
+  .icon-btn:hover { transform: scale(1.08); }
+}
 .icon-btn:disabled { opacity: 0.35; cursor: default; transform: none; }
 
 /* ---------- Tracker cards ---------- */
@@ -137,7 +146,7 @@ main {
   background: var(--card);
   border: 1px solid var(--hairline);
   border-radius: var(--radius);
-  padding: 16px 18px;
+  padding: 14px 16px;
   box-shadow: var(--shadow);
 }
 
@@ -145,7 +154,7 @@ main {
   font-weight: 700;
   font-size: 1.05rem;
   color: var(--rose-700);
-  margin-bottom: 12px;
+  margin-bottom: 8px;
 }
 
 /* 1-7 scale pills */
@@ -154,11 +163,18 @@ main {
   gap: 6px;
 }
 
-.scale,
-.scale-labels {
+.scale {
   display: grid;
   grid-template-columns: repeat(7, 1fr);
   gap: 6px;
+}
+
+/* Anchor labels run left / center / right on a single row (no wrapping towers). */
+.scale-labels {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  white-space: nowrap;
 }
 
 .scale-btn {
@@ -166,6 +182,7 @@ main {
   width: 100%;
   max-width: 52px;
   aspect-ratio: 1;
+  position: relative;
   border: 1px solid var(--pink-200);
   background: var(--pink-50);
   color: var(--text-soft);
@@ -177,20 +194,35 @@ main {
   transition: all 0.15s cubic-bezier(0.4, 0, 0.6, 1);
 }
 
+/* Expand the tappable area toward ~44px without changing the visual circle. */
+.scale-btn::after {
+  content: '';
+  position: absolute;
+  inset: -7px;
+  border-radius: 50%;
+}
+
 .scale-label {
+  flex: 0 1 auto;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
   text-align: center;
   font-size: 0.72rem;
   line-height: 1.2;
   color: var(--text-soft);
 }
 
-.scale-btn:hover { border-color: var(--group-color, var(--pink-400)); transform: scale(1.05); }
+@media (hover: hover) {
+  .scale-btn:hover { border-color: var(--group-color, var(--pink-400)); transform: scale(1.05); }
+}
 
 .scale-btn.selected {
   background: var(--group-color, var(--pink-400));
   border-color: var(--group-color, var(--pink-400));
   border-width: 2px;
   color: var(--rose-700);
+  font-weight: 800;
   box-shadow: 0 4px 12px rgba(var(--accent-rgb), 0.15);
 }
 
@@ -271,7 +303,9 @@ main {
   cursor: pointer;
 }
 
-.cancel-btn:hover { background: var(--pink-200); }
+@media (hover: hover) {
+  .cancel-btn:hover { background: var(--pink-200); }
+}
 
 /* ---------- Entry cards (day check-ins) ---------- */
 .entry-card {
@@ -385,7 +419,9 @@ main {
   transition: transform 0.15s cubic-bezier(0.4, 0, 0.6, 1), box-shadow 0.15s cubic-bezier(0.4, 0, 0.6, 1);
 }
 
-.save-btn:hover { transform: translateY(-2px); box-shadow: var(--shadow-hover); }
+@media (hover: hover) {
+  .save-btn:hover { transform: translateY(-2px); box-shadow: var(--shadow-hover); }
+}
 .save-btn:active { transform: translateY(0); box-shadow: var(--shadow-pressed); }
 
 /* Dark mode: rose-600 is luminous, so the button uses the darker end of the ramp to keep white text readable. */
@@ -439,9 +475,19 @@ main {
   font-size: 0.85rem;
   cursor: pointer;
   padding: 2px 0;
+  position: relative;
 }
 
-.viz-tool:hover { color: var(--pink-500); }
+/* Expand the tappable area toward ~44px without changing the visual size. */
+.viz-tool::before {
+  content: '';
+  position: absolute;
+  inset: -14px -12px;
+}
+
+@media (hover: hover) {
+  .viz-tool:hover { color: var(--pink-500); }
+}
 
 .pill {
   border: 1px solid var(--pink-200);
@@ -725,7 +771,7 @@ main {
   gap: 6px;
 }
 
-.chip {
+.corr-chip {
   display: inline-block;
   width: 14px;
   height: 14px;
@@ -744,34 +790,89 @@ main {
   align-items: center;
   justify-content: space-between;
   gap: 12px;
+  flex-wrap: wrap;
 }
 
 .tracker-card.manage .tracker-name { margin: 0; }
 
+/* Ellipsis "More" toggle — the row's only always-visible control. */
+.more-btn {
+  border: none;
+  background: var(--pink-100);
+  color: var(--rose-600);
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  font-size: 1.15rem;
+  line-height: 1;
+  cursor: pointer;
+  position: relative;
+  flex: 0 0 auto;
+  transition: background 0.15s cubic-bezier(0.4, 0, 0.6, 1);
+}
+
+/* Expand the tappable area toward ~44px without changing the visual size. */
+.more-btn::before {
+  content: '';
+  position: absolute;
+  inset: -8px;
+}
+
+.more-btn.open {
+  background: var(--pink-400);
+  color: var(--text);
+}
+
+@media (hover: hover) {
+  .more-btn:hover { background: var(--pink-200); }
+}
+
+/* Collapsible action row — hidden until the ⋯ button is tapped. */
 .manage-actions {
-  display: flex;
+  flex: 1 1 100%;
+  display: none;
   align-items: center;
   gap: 8px;
   flex-wrap: wrap;
+  margin-top: 12px;
+  padding-top: 12px;
+  border-top: 1px dashed var(--pink-200);
 }
 
-.direction-toggle {
+.manage-actions.open {
+  display: flex;
+}
+
+/* Direction segmented switch: Higher = worse ⇄ Higher = better. */
+.dir-toggle {
   display: inline-flex;
-  align-items: center;
-  gap: 5px;
-  font-size: 0.78rem;
-  font-weight: 700;
+  flex: 0 0 auto;
+  border-radius: 999px;
+  overflow: hidden;
+  border: 1px solid var(--pink-200);
+}
+
+.dir-toggle .dir-opt {
+  border: none;
+  background: transparent;
   color: var(--text-soft);
+  font-family: inherit;
+  font-weight: 700;
+  font-size: 0.78rem;
+  padding: 8px 12px;
   cursor: pointer;
   white-space: nowrap;
+  transition: background 0.15s ease, color 0.15s ease;
 }
 
-.direction-toggle input {
-  width: 15px;
-  height: 15px;
-  margin: 0;
-  cursor: pointer;
-  accent-color: var(--pink-500);
+.dir-toggle .dir-opt.active {
+  background: var(--pink-400);
+  color: var(--text);
+}
+
+@media (hover: hover) {
+  .dir-toggle .dir-opt:hover { background: var(--pink-200); }
+  .dir-toggle .dir-opt.active:hover { background: var(--pink-400); }
 }
 
 .mini-btn {
@@ -784,12 +885,24 @@ main {
   font-weight: 700;
   font-size: 0.85rem;
   cursor: pointer;
+  position: relative;
   transition: background 0.15s cubic-bezier(0.4, 0, 0.6, 1);
 }
 
-.mini-btn:hover { background: var(--pink-200); }
+/* Expand the tappable area toward ~44px without changing the visual size. */
+.mini-btn::before {
+  content: '';
+  position: absolute;
+  inset: -10px;
+}
+
+@media (hover: hover) {
+  .mini-btn:hover { background: var(--pink-200); }
+}
 .mini-btn.danger { background: #fde8e8; color: #c0392b; }
-.mini-btn.danger:hover { background: #f8d7d7; }
+@media (hover: hover) {
+  .mini-btn.danger:hover { background: #f8d7d7; }
+}
 
 /* Inline scale-label editor (Manage view) */
 .tracker-card.manage { flex-wrap: wrap; }
@@ -839,11 +952,13 @@ main {
 
 .add-row {
   display: flex;
+  flex-wrap: wrap;
   gap: 10px;
 }
 
 .add-row input {
-  flex: 1;
+  flex: 1 1 100%;
+  min-width: 0;
   border: 1px solid var(--pink-100);
   border-radius: 999px;
   padding: 12px 16px;
@@ -854,9 +969,11 @@ main {
 }
 
 .add-row input:focus { outline: none; border-color: var(--pink-400); }
-.add-row .save-btn { width: auto; padding: 12px 24px; }
+.add-row .save-btn { width: auto; padding: 12px 24px; flex: 0 0 auto; }
 
 .group-select {
+  flex: 1;
+  min-width: 0;
   border: 1px solid var(--pink-100);
   border-radius: 999px;
   padding: 12px 14px;
@@ -897,7 +1014,9 @@ main {
   transition: background 0.15s cubic-bezier(0.4, 0, 0.6, 1);
 }
 
-.danger-btn:hover { background: #fde8e8; }
+@media (hover: hover) {
+  .danger-btn:hover { background: #fde8e8; }
+}
 .danger-btn:disabled { opacity: 0.5; cursor: default; }
 
 /* ---------- Sign out ---------- */
@@ -914,7 +1033,9 @@ main {
   transition: all 0.15s cubic-bezier(0.4, 0, 0.6, 1);
 }
 
-.signout-btn:hover { background: var(--pink-100); border-color: var(--pink-400); }
+@media (hover: hover) {
+  .signout-btn:hover { background: var(--pink-100); border-color: var(--pink-400); }
+}
 
 /* ---------- Auth screen ---------- */
 .auth-screen {
@@ -924,7 +1045,7 @@ main {
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: 20px;
+  padding: calc(20px + env(safe-area-inset-top)) max(20px, env(safe-area-inset-right)) calc(20px + env(safe-area-inset-bottom)) max(20px, env(safe-area-inset-left));
   background: color-mix(in srgb, var(--bg) 95%, transparent);
   backdrop-filter: blur(2px);
 }
@@ -986,7 +1107,7 @@ main {
 .auth-signup-btn {
   border: none;
   background: var(--pink-100);
-  color: var(--rose-600);
+  color: var(--text);
   font-family: inherit;
   font-size: 1rem;
   font-weight: 700;
@@ -996,7 +1117,9 @@ main {
   transition: background 0.15s cubic-bezier(0.4, 0, 0.6, 1);
 }
 
-.auth-signup-btn:hover { background: var(--pink-200); }
+@media (hover: hover) {
+  .auth-signup-btn:hover { background: var(--pink-200); }
+}
 
 .auth-status {
   text-align: center;
@@ -1059,7 +1182,9 @@ main {
   transition: transform 0.15s cubic-bezier(0.4, 0, 0.6, 1), border-color 0.15s cubic-bezier(0.4, 0, 0.6, 1);
 }
 
-.theme-swatch:hover .swatch-dot { transform: scale(1.1); }
+@media (hover: hover) {
+  .theme-swatch:hover .swatch-dot { transform: scale(1.1); }
+}
 
 .theme-swatch.active .swatch-dot { border-color: var(--rose-600); }
 
@@ -1100,9 +1225,11 @@ main {
   transition: background 0.15s cubic-bezier(0.4, 0, 0.6, 1), color 0.15s cubic-bezier(0.4, 0, 0.6, 1), border-color 0.15s cubic-bezier(0.4, 0, 0.6, 1);
 }
 
-.theme-mode-btn:hover {
-  border-color: var(--pink-300);
-  color: var(--text);
+@media (hover: hover) {
+  .theme-mode-btn:hover {
+    border-color: var(--pink-300);
+    color: var(--text);
+  }
 }
 
 .theme-mode-btn.active {
@@ -1134,7 +1261,7 @@ select:focus-visible {
 /* ---------- Update banner ---------- */
 .update-banner {
   position: fixed;
-  top: 12px;
+  top: calc(12px + env(safe-area-inset-top));
   left: 50%;
   transform: translateX(-50%);
   z-index: 1000;

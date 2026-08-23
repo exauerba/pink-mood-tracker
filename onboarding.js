@@ -63,6 +63,8 @@
   let _replay = false;
   let _opener = null;
   let _prevOverflow = '';
+  let _touchX = null;
+  const SWIPE_THRESHOLD = 50; // px — below this it's a tap, not a swipe
 
   /* ---------- Small art helpers ---------- */
 
@@ -194,6 +196,22 @@
     if (_current > 0) goTo(_current - 1);
   }
 
+  /* ---------- Touch swipe (mobile) ---------- */
+
+  function onTouchStart(e) {
+    _touchX = e.touches[0].clientX;
+  }
+
+  function onTouchEnd(e) {
+    if (_touchX === null) return;
+    const endX = e.changedTouches[0].clientX;
+    const dx = endX - _touchX;
+    _touchX = null;
+    if (Math.abs(dx) < SWIPE_THRESHOLD) return; // tap, not a swipe
+    if (dx < 0) next();   // swiped left → next slide
+    else back();          // swiped right → previous slide
+  }
+
   /* ---------- Open / close ---------- */
 
   function open(replay) {
@@ -321,6 +339,12 @@
   /* ---------- Wire-up + init ---------- */
 
   function init() {
+    const ob = document.getElementById('onboarding');
+    if (ob) {
+      ob.addEventListener('touchstart', onTouchStart, { passive: true });
+      ob.addEventListener('touchend', onTouchEnd, { passive: true });
+    }
+
     const skip = document.getElementById('ob-skip');
     if (skip) skip.addEventListener('click', close);
     const nextBtn = document.getElementById('ob-next');

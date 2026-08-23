@@ -221,6 +221,7 @@ let currentDate = todayISO();
 let editingId = null; // id of check-in being edited, or null for a new one
 let draft = {}; // trackerId -> rating for the check-in form
 let labelsEditorId = null; // id of tracker whose scale labels are being edited
+let openManageId = null; // id of tracker whose collapsed actions are expanded
 
 /* ---------- Tab switching ---------- */
 
@@ -396,9 +397,10 @@ function renderScaleForm() {
       labels.className = 'scale-labels';
       const anchors = labelsFor(t);
       for (let v = 1; v <= 7; v++) {
+        if (!anchors[v]) continue;
         const lbl = document.createElement('span');
         lbl.className = 'scale-label';
-        lbl.textContent = anchors[v] || '';
+        lbl.textContent = anchors[v];
         labels.appendChild(lbl);
       }
 
@@ -532,45 +534,69 @@ function renderManage() {
       name.style.color = g.color;
       name.textContent = t.name;
 
+      const moreBtn = document.createElement('button');
+      moreBtn.type = 'button';
+      moreBtn.className = 'more-btn' + (openManageId === t.id ? ' open' : '');
+      moreBtn.setAttribute('aria-label', 'Tracker actions for ' + t.name);
+      moreBtn.setAttribute('aria-expanded', String(openManageId === t.id));
+      moreBtn.textContent = '⋯';
+      moreBtn.addEventListener('click', () => {
+        openManageId = openManageId === t.id ? null : t.id;
+        renderManage();
+      });
+
       const actions = document.createElement('div');
-      actions.className = 'manage-actions';
+      actions.className = 'manage-actions' + (openManageId === t.id ? ' open' : '');
 
-      const renameBtn = document.createElement('button');
-      renameBtn.className = 'mini-btn';
-      renameBtn.textContent = 'Rename';
-      renameBtn.addEventListener('click', () => renameTracker(idx));
+      if (openManageId === t.id) {
+        const isBad = t.direction === 'bad';
 
-      const delBtn = document.createElement('button');
-      delBtn.className = 'mini-btn danger';
-      delBtn.textContent = 'Remove';
-      delBtn.addEventListener('click', () => removeTracker(idx));
+        const dirGroup = document.createElement('div');
+        dirGroup.className = 'dir-toggle';
+        dirGroup.setAttribute('role', 'group');
+        dirGroup.setAttribute('aria-label', 'Direction of this scale');
 
-      const toggle = document.createElement('label');
-      toggle.className = 'direction-toggle';
-      const checkbox = document.createElement('input');
-      checkbox.type = 'checkbox';
-      checkbox.checked = t.direction === 'bad';
-      checkbox.addEventListener('change', () => {
-        t.direction = checkbox.checked ? 'bad' : 'good';
-        saveTrackers(trackers);
-        renderManage();
-      });
-      toggle.appendChild(checkbox);
-      toggle.appendChild(document.createTextNode('Higher = worse'));
+        const worse = document.createElement('button');
+        worse.type = 'button';
+        worse.className = 'dir-opt' + (isBad ? ' active' : '');
+        worse.textContent = 'Higher = worse';
+        worse.addEventListener('click', () => setDir(idx, 'bad'));
 
-      const labelsBtn = document.createElement('button');
-      labelsBtn.className = 'mini-btn';
-      labelsBtn.textContent = 'Labels';
-      labelsBtn.addEventListener('click', () => {
-        labelsEditorId = labelsEditorId === t.id ? null : t.id;
-        renderManage();
-      });
+        const better = document.createElement('button');
+        better.type = 'button';
+        better.className = 'dir-opt' + (!isBad ? ' active' : '');
+        better.textContent = 'Higher = better';
+        better.addEventListener('click', () => setDir(idx, 'good'));
 
-      actions.appendChild(toggle);
-      actions.appendChild(labelsBtn);
-      actions.appendChild(renameBtn);
-      actions.appendChild(delBtn);
+        dirGroup.appendChild(worse);
+        dirGroup.appendChild(better);
+
+        const labelsBtn = document.createElement('button');
+        labelsBtn.className = 'mini-btn';
+        labelsBtn.textContent = 'Labels';
+        labelsBtn.addEventListener('click', () => {
+          labelsEditorId = labelsEditorId === t.id ? null : t.id;
+          renderManage();
+        });
+
+        const renameBtn = document.createElement('button');
+        renameBtn.className = 'mini-btn';
+        renameBtn.textContent = 'Rename';
+        renameBtn.addEventListener('click', () => renameTracker(idx));
+
+        const delBtn = document.createElement('button');
+        delBtn.className = 'mini-btn danger';
+        delBtn.textContent = 'Remove';
+        delBtn.addEventListener('click', () => removeTracker(idx));
+
+        actions.appendChild(dirGroup);
+        actions.appendChild(labelsBtn);
+        actions.appendChild(renameBtn);
+        actions.appendChild(delBtn);
+      }
+
       card.appendChild(name);
+      card.appendChild(moreBtn);
       card.appendChild(actions);
 
       if (labelsEditorId === t.id) card.appendChild(labelsEditor(t));
@@ -653,6 +679,13 @@ function renameTracker(idx) {
     saveTrackers(trackers);
     renderManage();
   }
+}
+
+function setDir(idx, dir) {
+  if (!trackers[idx]) return;
+  trackers[idx].direction = dir;
+  saveTrackers(trackers);
+  renderManage();
 }
 
 async function removeTracker(idx) {

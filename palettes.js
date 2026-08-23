@@ -15,11 +15,11 @@
  * --rose-600 in dark). */
 const BASE_GROUPS = {
   light: {
-    physical: { label: 'Physical', color: '#66987e' },
-    mind: { label: 'Mind', color: '#708cb7' },
-    coping: { label: 'Coping', color: '#ac8756' },
-    craving: { label: 'Craving', color: '#937fbf' },
-    other: { label: 'Other', color: '#8e8a89' },
+    physical: { label: 'Physical', color: '#476a58' },
+    mind: { label: 'Mind', color: '#4e6280' },
+    coping: { label: 'Coping', color: '#785e3c' },
+    craving: { label: 'Craving', color: '#675986' },
+    other: { label: 'Other', color: '#636160' },
   },
   dark: {
     physical: { label: 'Physical', color: '#bcc6c1' },
@@ -75,7 +75,7 @@ const PALETTES = {
     },
     groups: {
       light: {
-        emotional: { label: 'Emotional', color: '#d98ba0' },
+        emotional: { label: 'Emotional', color: '#986170' },
         ...BASE_GROUPS.light,
       },
       dark: {
@@ -129,7 +129,7 @@ const PALETTES = {
     },
     groups: {
       light: {
-        emotional: { label: 'Emotional', color: '#977cc0' },
+        emotional: { label: 'Emotional', color: '#6a5786' },
         ...BASE_GROUPS.light,
       },
       dark: {
@@ -183,7 +183,7 @@ const PALETTES = {
     },
     groups: {
       light: {
-        emotional: { label: 'Emotional', color: '#79beaa' },
+        emotional: { label: 'Emotional', color: '#4b7669' },
         ...BASE_GROUPS.light,
       },
       dark: {
@@ -237,7 +237,7 @@ const PALETTES = {
     },
     groups: {
       light: {
-        emotional: { label: 'Emotional', color: '#7c9dc0' },
+        emotional: { label: 'Emotional', color: '#576e86' },
         ...BASE_GROUPS.light,
       },
       dark: {
@@ -291,7 +291,7 @@ const PALETTES = {
     },
     groups: {
       light: {
-        emotional: { label: 'Emotional', color: '#bf9c78' },
+        emotional: { label: 'Emotional', color: '#866d54' },
         ...BASE_GROUPS.light,
       },
       dark: {

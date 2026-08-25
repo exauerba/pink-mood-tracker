@@ -1,8 +1,29 @@
 # bloom
 ## A minimalist, pastel mood & symptom tracker
 
-[![Live app](https://img.shields.io/badge/Live_app-github_pages-ec4899?style=for-the-badge&logo=github&logoColor=white)](https://exauerba.github.io/pink-mood-tracker/)
-[![Buy Me A Coffee](https://img.shields.io/badge/Buy_Me_A_Coffee-FFDD00?style=for-the-badge&logo=buy-me-a-coffee&logoColor=black)](https://buymeacoffee.com/exauerba)
+<a href="https://exauerba.github.io/pink-mood-tracker/" title="Open bloom live">
+  <img alt="Live app" src="https://img.shields.io/badge/Live_app-github_pages-894d5b?style=for-the-badge&logo=github&logoColor=white" />
+</a>
+<a href="https://buymeacoffee.com/exauerba" title="Buy me a coffee">
+  <svg width="168" height="28" viewBox="0 0 168 28" role="img" aria-label="Buy me a coffee" xmlns="http://www.w3.org/2000/svg">
+    <defs>
+      <linearGradient id="bloom-bmac" x1="0" y1="0" x2="1" y2="1">
+        <stop offset="0" stop-color="#894d5b" />
+        <stop offset="1" stop-color="#995c6f" />
+      </linearGradient>
+    </defs>
+    <rect width="168" height="28" rx="14" fill="url(#bloom-bmac)" />
+    <g transform="translate(11,4)">
+      <rect x="1" y="4" width="12" height="10" rx="2" fill="#fff" />
+      <path d="M13 6 C16 6, 16 12, 13 12" fill="none" stroke="#fff" stroke-width="1.7" stroke-linecap="round" />
+      <rect x="1" y="15" width="12" height="1.6" rx="0.8" fill="#fff" />
+    </g>
+    <text x="34" y="18.6" fill="#fff" font-family="'Nunito', ui-rounded, 'Segoe UI', system-ui, -apple-system, sans-serif" font-size="12.5" font-weight="800" letter-spacing="0.2">Buy me a coffee</text>
+    <g transform="translate(141,8.2) scale(0.92)" fill="#fff">
+      <path d="M1 4.5C1 2.6 2.6 1 4.5 1c1 0 1.9.4 2.5 1.1C7.6 1.4 8.5 1 9.5 1 11.4 1 13 2.6 13 4.5c0 2-1.6 3.6-4.4 5.6L6.5 11.6 4.4 10C1.6 8.1 1 6.5 1 4.5Z" />
+    </g>
+  </svg>
+</a>
 
 Mood remembered is not mood experienced. Memory smooths, exaggerates, and rewrites emotion — bloom captures how you feel *in the moment*, several times a day, in a few taps, and turns those moments into patterns you can see.
 

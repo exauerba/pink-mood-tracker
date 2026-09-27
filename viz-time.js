@@ -101,7 +101,13 @@ window.vizTime = {
         maintainAspectRatio: false,
         plugins: {
           legend: { labels: { font: { family: 'Nunito', weight: 700 }, color: cssVar('--text-soft') } },
-          tooltip: { titleFont: { family: 'Nunito', weight: 700 } },
+          tooltip: {
+            titleFont: { family: 'Nunito', weight: 700 },
+            // Sort the hovered list by average rating, greatest first.
+            itemSort: (a, b) =>
+              (b.parsed.y == null ? -Infinity : b.parsed.y) -
+              (a.parsed.y == null ? -Infinity : a.parsed.y),
+          },
         },
         scales: {
           y: {

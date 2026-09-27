@@ -458,6 +458,18 @@ function renderChart() {
         tooltip: {
           titleFont: { family: 'Nunito', weight: 700 },
           animation: { duration: 100 },
+          // Sort the hovered list by the displayed rating, greatest first.
+          // Flipped trackers plot 8 - rating, so sort on the real value
+          // (raw.orig), matching what the label callback shows.
+          itemSort(a, b) {
+            const val = (it) => {
+              const raw = it.raw;
+              return raw && raw.orig !== undefined ? raw.orig : (raw ? raw.y : it.parsed.y);
+            };
+            const va = val(a) == null ? -Infinity : val(a);
+            const vb = val(b) == null ? -Infinity : val(b);
+            return vb - va;
+          },
           callbacks: {
             label(context) {
               const raw = context.raw;

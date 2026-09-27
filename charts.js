@@ -93,6 +93,19 @@ function renderVisualize() {
   if (window.vizInsights) window.vizInsights.render();
 }
 
+/* Rebuild the visualize charts after a palette or theme swap. Chart.js caches
+ * the color strings it was constructed with, so a CSS variable change cannot
+ * reach a live chart — the options object has to be rebuilt. No-op when the
+ * Visualize tab is hidden (nothing visible is stale; app.js rebuilds on the
+ * next tab switch, which re-reads the current palette) and no-op before the
+ * view has ever rendered, so `selectedForViz` is never auto-selected twice. */
+function refreshVizColors() {
+  const view = document.getElementById('view-visualize');
+  if (!view || !view.classList.contains('active')) return;
+  if (!vizInitialized) return;
+  renderVisualize();
+}
+
 function buildPills() {
   const wrap = document.getElementById('viz-tracker-pills');
   wrap.innerHTML = '';
@@ -388,7 +401,10 @@ function renderChart() {
       data: rollingAverage(t.id, from, to),
       raw: collectPoints(t.id, from, to),
       borderColor: color,
-      backgroundColor: color + '22',
+      // Opaque: Chart.js fills the legend swatch from backgroundColor, so the
+      // old 13%-alpha tint made the swatch a near-invisible wash. Nothing is
+      // painted on the plot (fill is false), so this has no other effect.
+      backgroundColor: color,
       borderWidth: 2.5,
       borderDash: flipped ? [6, 4] : undefined,
       pointRadius: 0,
@@ -479,46 +495,4 @@ function renderChart() {
       },
     },
   });
-}
-
-/* Color per tracker: use its group hue, vary lightness by position within
- * the group so same-group lines stay distinguishable. */
-function colorForTracker(t) {
-  const g = GROUPS[t.group] || GROUPS.other;
-  const [h, s] = hexToHsl(g.color);
-  const siblings = trackers.filter((x) => (x.group || 'other') === (t.group || 'other'));
-  const idx = Math.max(0, siblings.indexOf(t));
-  const n = Math.max(siblings.length, 1);
-  // Evenly spread lightness across the group so same-group lines stay distinct.
-  const newL = n === 1 ? 50 : 30 + (idx / (n - 1)) * 40;
-  return hslToHex(h, s, newL);
-}
-
-function hexToHsl(hex) {
-  const r = parseInt(hex.slice(1, 3), 16) / 255;
-  const g = parseInt(hex.slice(3, 5), 16) / 255;
-  const b = parseInt(hex.slice(5, 7), 16) / 255;
-  const max = Math.max(r, g, b), min = Math.min(r, g, b);
-  let h = 0, s = 0;
-  const l = (max + min) / 2;
-  const d = max - min;
-  if (d !== 0) {
-    s = l > 0.5 ? d / (2 - max - min) : d / (max + min);
-    switch (max) {
-      case r: h = (g - b) / d + (g < b ? 6 : 0); break;
-      case g: h = (b - r) / d + 2; break;
-      case b: h = (r - g) / d + 4; break;
-    }
-    h /= 6;
-  }
-  return [h * 360, s * 100, l * 100];
-}
-
-function hslToHex(h, s, l) {
-  s /= 100; l /= 100;
-  const k = (n) => (n + h / 30) % 12;
-  const a = s * Math.min(l, 1 - l);
-  const f = (n) => l - a * Math.max(-1, Math.min(k(n) - 3, Math.min(9 - k(n), 1)));
-  const toHex = (x) => Math.round(x * 255).toString(16).padStart(2, '0');
-  return `#${toHex(f(0))}${toHex(f(8))}${toHex(f(4))}`;
 }

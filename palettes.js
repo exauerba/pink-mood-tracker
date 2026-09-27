@@ -316,6 +316,112 @@ function cssVar(name) {
   return getComputedStyle(document.documentElement).getPropertyValue(name).trim();
 }
 
+/* Shared tracker color ramp for every chart. Lives here (not charts.js) so
+ * both charts.js and viz-time.js use one implementation, and so the live
+ * --card value is resolvable. Contract: lowercase 6-digit #rrggbb — callers
+ * append '22'/'33'/'55' for translucent fills. */
+const VIZ_CARD_FLOOR = 3.05;          // 3:1 requirement + rounding headroom
+const VIZ_BAND = { light: [0.32, 0.635], dark: [0.525, 0.855] };
+const VIZ_HUE_BASE = 40;              // total hue window, 2 members
+const VIZ_HUE_GROW = 6;               // extra degrees per extra member
+const VIZ_HUE_MAX = 70;               // keep every sibling in-family
+
+/* Card color as actually applied right now. No caching on purpose: a cached
+ * value goes stale across applyPalette() and paints light-mode colors onto a
+ * dark card. Falls back to the palette table if the CSS var is unreadable. */
+function vizCardHex() {
+  const raw = cssVar('--card');
+  if (/^#[0-9a-f]{6}$/i.test(raw)) return raw.toLowerCase();
+  const p = PALETTES[localStorage.getItem('bloom.palette')] || PALETTES.blush;
+  return p[currentMode()]['--card'];
+}
+
+function hexToLin(hex) {
+  const h = hex.replace('#', '');
+  return [0, 1, 2].map((i) => {
+    const c = parseInt(h.substr(i * 2, 2), 16) / 255;
+    return c <= 0.04045 ? c / 12.92 : Math.pow((c + 0.055) / 1.055, 2.4);
+  });
+}
+
+function linToHex(lin) {
+  return '#' + lin.map((c) => {
+    const s = c <= 0.0031308 ? 12.92 * c : 1.055 * Math.pow(Math.max(c, 0), 1 / 2.4) - 0.055;
+    return Math.round(Math.max(0, Math.min(1, s)) * 255).toString(16).padStart(2, '0');
+  }).join('');
+}
+
+function relLumLin(lin) {
+  return 0.2126 * lin[0] + 0.7152 * lin[1] + 0.0722 * lin[2];
+}
+
+function oklabToLin(o) {
+  const l = Math.pow(o[0] + 0.3963377774 * o[1] + 0.2158037573 * o[2], 3);
+  const m = Math.pow(o[0] - 0.1055613458 * o[1] - 0.0638541728 * o[2], 3);
+  const s = Math.pow(o[0] - 0.0894841775 * o[1] - 1.2914855480 * o[2], 3);
+  return [
+    4.0767416621 * l - 3.3077115913 * m + 0.2309699292 * s,
+    -1.2684380046 * l + 2.6097574011 * m - 0.3413193965 * s,
+    -0.0041960863 * l - 0.7034186147 * m + 1.7076147010 * s,
+  ];
+}
+
+function linToOklab(lin) {
+  const l = Math.cbrt(lin[0]), m = Math.cbrt(lin[1]), s = Math.cbrt(lin[2]);
+  return [
+    0.2104542553 * l + 0.7936177850 * m - 0.0040720468 * s,
+    1.9779984951 * l - 2.4285922050 * m + 0.4505937099 * s,
+    0.0259040371 * l + 0.7827717662 * m - 0.8086757660 * s,
+  ];
+}
+
+/* Oklab -> #rrggbb, reducing chroma until the color fits in sRGB. */
+function oklabToHex(L, a, b) {
+  const inside = (lin) => lin.every((c) => c >= -0.001 && c <= 1.001);
+  const direct = oklabToLin([L, a, b]);
+  if (inside(direct)) return linToHex(direct);
+  let lo = 0, hi = 1;
+  for (let i = 0; i < 22; i++) {
+    const mid = (lo + hi) / 2;
+    if (inside(oklabToLin([L, a * mid, b * mid]))) lo = mid; else hi = mid;
+  }
+  return linToHex(oklabToLin([L, a * lo, b * lo]));
+}
+
+/* Straight line through Oklab: a contrast-anchored lightness band plus a
+ * narrow hue window, so adjacent same-group lines differ evenly in dE. */
+function colorForTracker(t) {
+  const g = GROUPS[t.group] || GROUPS.other;
+  const anchor = linToOklab(hexToLin(g.color));
+  const anchorC = Math.hypot(anchor[1], anchor[2]);
+  let anchorH = Math.atan2(anchor[2], anchor[1]) * 180 / Math.PI;
+  if (anchorH < 0) anchorH += 360;
+
+  const cardY = relLumLin(hexToLin(vizCardHex()));
+  const key = t.group || 'other';
+  const siblings = trackers.filter((x) => (x.group || 'other') === key);
+  const n = Math.max(siblings.length, 1);
+  const u = n === 1 ? 0.5 : Math.max(0, siblings.indexOf(t)) / (n - 1);
+
+  const band = cardY > 0.18 ? VIZ_BAND.light : VIZ_BAND.dark;
+  const half = (Math.min(VIZ_HUE_MAX, VIZ_HUE_BASE + VIZ_HUE_GROW * (n - 1)) / 2) * Math.PI / 180;
+  const hr = anchorH * Math.PI / 180;
+  const c = Math.min(0.10, Math.max(0.055, anchorC));
+  const a0 = c * Math.cos(hr - half), b0 = c * Math.sin(hr - half);
+  const a1 = c * Math.cos(hr + half), b1 = c * Math.sin(hr + half);
+
+  let L = band[0] + u * (band[1] - band[0]);
+  for (let i = 0; i < 240; i++) {
+    const hex = oklabToHex(L, a0 + u * (a1 - a0), b0 + u * (b1 - b0));
+    const y = relLumLin(hexToLin(hex));
+    if ((Math.max(y, cardY) + 0.05) / (Math.min(y, cardY) + 0.05) >= VIZ_CARD_FLOOR) return hex;
+    L += cardY > 0.18 ? -0.004 : 0.004;
+    if (L <= 0.02) return '#000000';
+    if (L >= 0.99) return '#ffffff';
+  }
+  return oklabToHex(L, a0 + u * (a1 - a0), b0 + u * (b1 - b0));
+}
+
 function applyPalette(id) {
   const effectiveId = PALETTES[id] ? id : 'blush';
   const p = PALETTES[effectiveId];
@@ -326,6 +432,10 @@ function applyPalette(id) {
   document.documentElement.style.colorScheme = mode;
   document.querySelector('meta[name="theme-color"]').setAttribute('content', p.meta[mode]);
   localStorage.setItem('bloom.palette', effectiveId);
+  // Chart canvases resolve their colors once, at construction, so a palette or
+  // theme swap cannot reach an existing chart — rebuild it. The typeof guard
+  // covers the init call in app.js, which runs before charts.js is parsed.
+  if (typeof refreshVizColors === 'function') refreshVizColors();
 }
 
 function setThemeMode(mode) {

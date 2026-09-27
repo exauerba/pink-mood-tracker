@@ -78,7 +78,9 @@ window.vizTime = {
         label: t.name,
         data: acc.map(([sum, n]) => (n > 0 ? Math.round((sum / n) * 100) / 100 : null)),
         borderColor: color,
-        backgroundColor: color + '22',
+        // Opaque so the legend swatch (and the day-part point fill, which
+        // routes to backgroundColor) matches the line instead of a 13% wash.
+        backgroundColor: color,
         borderWidth: 3,
         pointRadius: 4,
         spanGaps: false,

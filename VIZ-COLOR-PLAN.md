@@ -2,7 +2,38 @@
 
 Branch: `fix/viz-color-coding` (from `main` @ `36c33d1`)
 Scope: the Visualize tab — trend chart, by-time-of-day chart, correlation matrix.
-Status: **plan only, no code changed yet.** Every number below was measured against the shipped source.
+
+---
+
+## Status
+
+| Work item | State | Commit |
+| --- | --- | --- |
+| **A** legend swatch | shipped + verified | `f4d9864` |
+| **B** Oklab ramp | shipped + verified | `f4d9864` |
+| **D** repaint on palette/theme change | shipped + verified | `f4d9864` |
+| **C** palette/theme-aware chrome | **blocked** on the 5 open decisions | — |
+
+**Code decisions taken** (per "choose the best, safe bug free options"):
+- A → `backgroundColor: color` (opaque). Verified `legendItem.fillStyle === dataset.borderColor` for all 10 trackers.
+- B → the contrast-anchored Oklab ramp, moved into `palettes.js` so both charts share it.
+- D → `refreshVizColors()`, guarded on `vizInitialized` and the active tab, hooked at the end of `applyPalette()` behind a `typeof` guard.
+
+**Design decisions still open** gate work item C only — see *Open decisions* below.
+
+### Verification performed
+
+1. **Offline sweep** (`%TEMP%\opencode\bloom-ramp-verify.mjs`, evals the real `palettes.js` under DOM stubs): 5 palettes × 2 modes × 6 groups × n=1…12 → **0 contrast violations, 0 malformed hex, min contrast 3.050:1**. Worst-case min pairwise ΔE76 by group size: n=2 39.4 · n=3 19.0 · n=4 12.5 · **n=5 9.0** · n=6 7.3 · n=8 4.8 · n=12 2.4.
+2. **Live browser, blush/light, all 10 shipped trackers:** every one ≥3:1 (min 3.09:1 Energy), every `backgroundColor === borderColor`, every legend swatch byte-identical to its line, `swatchVsCard === lineVsCard` for all 10 (previously 1.68–7.21:1).
+3. **Live browser, blush/dark** (via `setThemeMode('dark')`): charts rebuilt in place, all 10 pass (min 3.07:1), swatches identical, and the 10 selected pills survived → the `vizInitialized` guard prevented a re-auto-select.
+4. **Live browser, mint/dark** (via `applyPalette('mint')`): all 10 pass, swatches identical.
+5. **Console:** no errors or warnings beyond a pre-existing unrelated `<meta apple-mobile-web-app-capable>` deprecation notice.
+6. **`impeccable detect --json charts.js palettes.js viz-time.js` → `[]`** (no findings).
+7. The boot-time `typeof refreshVizColors` guard was exercised for free: `app.js:906` calls `applyPalette` before `charts.js` parses, and the page booted clean.
+
+### Still open / not fixed
+- Work item **C** (legend text, ticks, gridlines, note dots, normal band, correlation matrix) — gated on the 5 decisions.
+- Flagged, out of scope: tooltip is palette-blind; the "What helped" card uses hardcoded greens; `updateGroupColors()` misses the `auto` media-query path.
 
 ---
 

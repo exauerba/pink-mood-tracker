@@ -54,6 +54,9 @@ const rawDotsPlugin = {
   afterDatasetsDraw(chart) {
     const { ctx, chartArea, scales } = chart;
     if (!chartArea) return;
+    // Resolved once per frame, not once per point: a single getComputedStyle
+    // read, and the note dot still tracks a palette swap without a rebuild.
+    const noteInk = cssVar('--rose-600');
     chart.data.datasets.forEach((ds) => {
       if (!ds.raw || !ds.raw.length) return;
       const color = ds.borderColor;
@@ -70,7 +73,7 @@ const rawDotsPlugin = {
         ctx.fill();
         ctx.stroke();
         if (p.note) {
-          ctx.fillStyle = '#be185d';
+          ctx.fillStyle = noteInk;
           ctx.beginPath();
           ctx.arc(x, y - 9, 3, 0, Math.PI * 2);
           ctx.fill();
@@ -439,14 +442,14 @@ function renderChart() {
           ? {
               lo: band.lo,
               hi: band.hi,
-              color: 'rgba(244,114,182,0.16)',
-              borderColor: 'rgba(208,172,183,0.55)',
+              color: cssVar('--pink-100'),
+              borderColor: cssVar('--rose-600'),
             }
           : null,
         legend: {
           labels: {
             font: { family: 'Nunito', weight: 700, size: 11 },
-            color: '#5b3a4a',
+            color: cssVar('--text-soft'),
             boxWidth: 12,
             boxHeight: 12,
             padding: 8,
@@ -479,8 +482,8 @@ function renderChart() {
         y: {
           min: yRange.min,
           max: yRange.max,
-          ticks: { stepSize: 1, color: '#9d7b8c', font: { family: 'Nunito' } },
-          grid: { color: '#fce7f3' },
+          ticks: { stepSize: 1, color: cssVar('--text-soft'), font: { family: 'Nunito' } },
+          grid: { color: cssVar('--pink-200') },
         },
         x: {
           type: 'time',
@@ -489,7 +492,7 @@ function renderChart() {
             displayFormats: { day: 'MMM d' },
             tooltipFormat: 'MMM d, HH:mm',
           },
-          ticks: { color: '#9d7b8c', font: { family: 'Nunito' }, maxRotation: 45, autoSkip: true, maxTicksLimit: 12 },
+          ticks: { color: cssVar('--text-soft'), font: { family: 'Nunito' }, maxRotation: 45, autoSkip: true, maxTicksLimit: 12 },
           grid: { display: false },
         },
       },

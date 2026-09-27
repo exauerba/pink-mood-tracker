@@ -10,12 +10,27 @@
 (function () {
   'use strict';
 
-  const PINK = '236,72,153';
-  const BLUE = '56,189,248';
+  /* Strongest fill the cell ramp may reach. The label is 1.2rem bold (WCAG
+   * large text, 3:1 target), so the ramp can run this far; the label ink flips
+   * to var(--card) once the composited fill sits close enough to var(--text)
+   * that a var(--text) label would fall below 3:1. */
+  const CORR_MAX_ALPHA = 0.9;
   const NEAR_ZERO = 0.1;
   const MIN_HELPED_DAYS = 3;
   const MIN_PAIRED_DAYS = 5;
   const MAX_TRACKERS = 10;
+
+  /* WCAG relative luminance of a "R, G, B" CSS string (the --viz-*-rgb form). */
+  function rgbLum(rgb) {
+    const [r, g, b] = String(rgb).split(',').map((n) => parseInt(n, 10) / 255);
+    const lin = (c) => (c <= 0.04045 ? c / 12.92 : Math.pow((c + 0.055) / 1.055, 2.4));
+    return 0.2126 * lin(r) + 0.7152 * lin(g) + 0.0722 * lin(b);
+  }
+
+  /* WCAG contrast ratio between two relative luminances. */
+  function contrast(a, b) {
+    return (Math.max(a, b) + 0.05) / (Math.min(a, b) + 0.05);
+  }
 
   /* All dates in the range with entries, sorted ascending. */
   function rangeDays(from, to) {
@@ -223,6 +238,15 @@
     table.appendChild(thead);
 
     const tbody = document.createElement('tbody');
+    // Authored as "R, G, B" strings, so cssVar() returns exactly the substring
+    // the rgba() template needs. Resolved once per render, not once per cell,
+    // along with the two label inks the per-cell switch compares.
+    const posRgb = cssVar('--viz-pos-rgb');
+    const negRgb = cssVar('--viz-neg-rgb');
+    const cardHex = vizCardHex();
+    const cardRgb = [0, 2, 4].map((i) => parseInt(cardHex.slice(1 + i, 3 + i), 16));
+    const cardLum = relLumLin(hexToLin(cardHex));
+    const textLum = relLumLin(hexToLin(cssVar('--text')));
     shown.forEach((sa) => {
       const tr = document.createElement('tr');
 
@@ -257,8 +281,19 @@
           );
           td.textContent = rho.toFixed(2);
           if (Math.abs(rho) >= NEAR_ZERO) {
-            const alpha = Math.max(0.15, Math.min(0.9, Math.abs(rho))).toFixed(2);
-            td.style.background = `rgba(${rho > 0 ? PINK : BLUE},${alpha})`;
+            const alpha = Math.max(0.15, Math.min(CORR_MAX_ALPHA, Math.abs(rho)));
+            const base = rho > 0 ? posRgb : negRgb;
+            td.style.background = `rgba(${base},${alpha.toFixed(2)})`;
+            // The 1.2rem bold label needs 3:1. Composite the fill over the
+            // card in sRGB (CSS alpha compositing), then pick whichever
+            // palette extreme clears more against it — var(--text) on pale
+            // cells, var(--card) on saturated ones.
+            const compRgb = base.split(',').map((n, i) => alpha * parseInt(n, 10) + (1 - alpha) * cardRgb[i]);
+            const fillLum = rgbLum(compRgb.join(','));
+            td.style.color =
+              contrast(cardLum, fillLum) >= contrast(textLum, fillLum)
+                ? 'var(--card)'
+                : 'var(--text)';
           }
         }
 

@@ -325,6 +325,12 @@ const VIZ_BAND = { light: [0.32, 0.635], dark: [0.525, 0.855] };
 const VIZ_HUE_BASE = 40;              // total hue window, 2 members
 const VIZ_HUE_GROW = 6;               // extra degrees per extra member
 const VIZ_HUE_MAX = 70;               // keep every sibling in-family
+/* Known limit: same-group separation falls below dE76 10 from n=5 (9.0 at n=5,
+ * 7.3 at n=6). No contrast-bounded ramp can fix this, and the obvious
+ * non-color channel is taken — borderDash [6,4] already means "inverted
+ * tracker" (charts.js). The defaults peak at 4 per group, so this only bites
+ * users who add trackers. If it needs a fix, use point shapes or line-end
+ * labels, not dashes. */
 
 /* Card color as actually applied right now. No caching on purpose: a cached
  * value goes stale across applyPalette() and paints light-mode colors onto a
@@ -422,6 +428,9 @@ function colorForTracker(t) {
   return oklabToHex(L, a0 + u * (a1 - a0), b0 + u * (b1 - b0));
 }
 
+/* NOTE: --viz-pos-rgb / --viz-neg-rgb (correlation heatmap) are intentionally
+ * NOT palette keys — they are owned by styles.css so the diverging encoding
+ * stays fixed across palettes. Do not add them to a palette block. */
 function applyPalette(id) {
   const effectiveId = PALETTES[id] ? id : 'blush';
   const p = PALETTES[effectiveId];
@@ -436,6 +445,10 @@ function applyPalette(id) {
   // theme swap cannot reach an existing chart — rebuild it. The typeof guard
   // covers the init call in app.js, which runs before charts.js is parsed.
   if (typeof refreshVizColors === 'function') refreshVizColors();
+  // Same for the Track view's group dots: the prefers-color-scheme path calls
+  // applyPalette() directly, so without this an OS theme flip leaves the Track
+  // view stale. No-op before the Track view renders (empty querySelectorAll).
+  if (typeof updateGroupColors === 'function') updateGroupColors();
 }
 
 function setThemeMode(mode) {

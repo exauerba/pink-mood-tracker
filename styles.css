@@ -12,12 +12,24 @@
   --text: #4c3d42;
   --text-soft: #745d66;
   --accent-rgb: 186, 135, 151;
+  /* Correlation-matrix encoding: fixed across palettes so "rose = moves
+   * together, blue = moves apart" survives a theme swap. Deep on light cards,
+   * pale on dark ones. */
+  --viz-pos-rgb: 114, 36, 49;
+  --viz-neg-rgb: 42, 52, 119;
   --shadow: 0 1px 2px rgba(186, 135, 151, 0.05), 0 8px 24px -8px rgba(186, 135, 151, 0.09);
   --shadow-hover: 0 1px 3px rgba(186, 135, 151, 0.07), 0 14px 30px -12px rgba(186, 135, 151, 0.13);
   --shadow-pressed: 0 1px 1px rgba(186, 135, 151, 0.04), 0 3px 8px -4px rgba(186, 135, 151, 0.07);
   --hairline: #f0e9eb;
   --ring: #874f61;
   --radius: 18px;
+}
+
+/* Deep-on-light, pale-on-dark: the two diverging fills for the correlation
+ * heatmap. Specificity (0,1,1) beats :root so it wins without !important. */
+html[data-theme="dark"] {
+  --viz-pos-rgb: 234, 187, 195;
+  --viz-neg-rgb: 193, 198, 233;
 }
 
 * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -721,7 +733,7 @@ main {
 .corr-table {
   width: 100%;
   border-collapse: collapse;
-  font-size: 0.8rem;
+  font-size: 0.9rem;
   min-width: 320px; /* keep cells readable / not squashed on tiny screens */
 }
 
@@ -750,7 +762,9 @@ main {
 .corr-cell {
   font-weight: 700;
   color: var(--text);
-  font-size: 0.85rem;
+  /* 1.2rem bold = 19.2px, >= 18.66px bold, so the label is WCAG large text and
+   * the contrast target is 3:1 — which lets the fill ramp run to 0.9. */
+  font-size: 1.2rem;
 }
 
 /* Legend explaining the pink / blue heatmap in the links table. */
@@ -778,8 +792,8 @@ main {
   border-radius: 4px;
 }
 
-.chip-pink { background: rgba(236, 72, 153, 0.55); }
-.chip-blue { background: rgba(56, 189, 248, 0.55); margin-left: 10px; }
+.chip-pink { background: rgba(var(--viz-pos-rgb), 0.55); }
+.chip-blue { background: rgba(var(--viz-neg-rgb), 0.55); margin-left: 10px; }
 
 .chip-label { color: var(--text-soft); font-weight: 600; }
 .corr-legend-hint { color: var(--text-soft); font-weight: 600; }

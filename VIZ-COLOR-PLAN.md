@@ -12,14 +12,21 @@ Scope: the Visualize tab — trend chart, by-time-of-day chart, correlation matr
 | **A** legend swatch | shipped + verified | `f4d9864` |
 | **B** Oklab ramp | shipped + verified | `f4d9864` |
 | **D** repaint on palette/theme change | shipped + verified | `f4d9864` |
-| **C** palette/theme-aware chrome | **blocked** on the 5 open decisions | — |
+| **C** palette/theme-aware chrome | shipped + verified | `(pending commit)` |
 
 **Code decisions taken** (per "choose the best, safe bug free options"):
 - A → `backgroundColor: color` (opaque). Verified `legendItem.fillStyle === dataset.borderColor` for all 10 trackers.
 - B → the contrast-anchored Oklab ramp, moved into `palettes.js` so both charts share it.
 - D → `refreshVizColors()`, guarded on `vizInitialized` and the active tab, hooked at the end of `applyPalette()` behind a `typeof` guard.
 
-**Design decisions still open** gate work item C only — see *Open decisions* below.
+**Design decisions taken** (deferred to the design specialist agent, per user instruction):
+1. Legend text → `--text-soft` (chrome tier, demotes legend below the colored lines).
+2. Grid → `--pink-200` (present in light, tamed in dark; `--hairline` rejected as still invisible in light).
+3. Heatmap → option (a): `.corr-cell` 1.2rem bold (WCAG large text → 3:1 target), `CORR_MAX_ALPHA = 0.9`, per-cell ink flip between `var(--text)` and `var(--card)`.
+4. Diverging hues → one fixed semantic pair in `styles.css` only (`--viz-pos-rgb`/`--viz-neg-rgb`, deep on light / pale on dark via `html[data-theme="dark"]`); no `palettes.js` changes.
+5. n≥5 same-group → accept + document (dashes already mean "inverted tracker"; defaults peak at 4 per group).
+
+**Implementation note (C):** the design agent's ink-flip formula composited in linear space; CSS alpha-compositing happens on sRGB channels first. Corrected in `viz-insights.js` — composite `alpha * base + (1 - alpha) * cardRgb` in sRGB, then compute luminance. Without this, negative cells measured ~2:1 instead of the predicted 3.4:1.
 
 ### Verification performed
 
@@ -31,9 +38,14 @@ Scope: the Visualize tab — trend chart, by-time-of-day chart, correlation matr
 6. **`impeccable detect --json charts.js palettes.js viz-time.js` → `[]`** (no findings).
 7. The boot-time `typeof refreshVizColors` guard was exercised for free: `app.js:906` calls `applyPalette` before `charts.js` parses, and the page booted clean.
 
+**Work item C verification (signed in as demo, 3M range, all 10 selected):**
+8. **Blush/light chrome:** legend `#765b66` 5.7:1, ticks 5.7:1, grid `--pink-200` `#f0c2d1`, band fill `--pink-100` `#f8d9e3` + border `--rose-600` `#a84f6b` 4.93:1, lines min 5.18:1, swatches match, chips use the new `--viz-*-rgb` vars.
+9. **Correlation cells, blush/light:** 90/90 real cells ≥3:1 (min 3.22:1) after the sRGB-compositing correction; ink flips to `var(--card)` on saturated cells (e.g. −0.71 → 4.67:1, +0.91 → 7.62:1) and stays `var(--text)` on pale ones.
+10. **Blush/dark:** lines min 3.07:1, cells min 3.53:1, chrome tokens resolve to dark values (legend `#b9acb0`, grid `#4c393f`, band border `#c3a2a8`), diverging pair flips to the pale dark set (`234,187,195` / `193,198,233`).
+11. **Mint palette, both themes:** 10/10 lines and 90/90 cells pass in dark (`#1b221f`) and light (`#f8faf9`).
+
 ### Still open / not fixed
-- Work item **C** (legend text, ticks, gridlines, note dots, normal band, correlation matrix) — gated on the 5 decisions.
-- Flagged, out of scope: tooltip is palette-blind; the "What helped" card uses hardcoded greens; `updateGroupColors()` misses the `auto` media-query path.
+- Flagged, out of scope: tooltip is palette-blind; the "What helped" card uses hardcoded greens; `updateGroupColors()` now runs on the `auto` media-query path (fixed as part of C).
 
 ---
 
@@ -601,40 +613,36 @@ pass. The `var(--pink-100)` / `var(--pink-50)` cells at viz-insights.js:240/252 
 
 ---
 
-## Open decisions — resolve before implementing C3
+## Open decisions — RESOLVED by the design specialist agent (see Status table)
 
-1. **Legend text weight: `--text-soft` or `--text`?** `--text-soft` is a deliberate hierarchy demotion (legend goes
-   from 9.17:1 to 5.19–5.86 in light). It passes 4.5:1 everywhere. `--text` (9.35–12.96 everywhere) keeps the legend
-   as the primary label. One-token swap either way.
+1. **Legend text → `--text-soft`.** The legend is chrome (the pills above the chart already name every selected
+   tracker in its own colour), so it belongs on the same ink as the axis ticks. Light-mode demotion (9.17 → 5.19) is
+   real but passes AA; dark-mode legend was failing at 1.64:1 and is now 7.30:1. Reversal is a one-token swap to
+   `cssVar('--text')` if ever wanted.
 
-2. **Grid line target.** `--hairline` (1.08–1.19) is the app's own "structural, not semantic" tint. It is defensible
-   under WCAG 1.4.11 — gridlines are not required to understand the values, the tick labels are — but it does not
-   reach 3:1 and that should be a conscious call, not a silent one. `--pink-200` is the one-notch-up alternative.
+2. **Grid → `--pink-200`.** `--hairline` (1.08–1.19) is exactly as invisible in light mode as the value it replaces,
+   so the light-mode half of the bug survives. `--pink-200` (1.29–1.71) makes the grid faintly present in light and
+   stops the dark-mode glare (13.4 → ~1.5) in one token. `--pink-300` stays rejected (3.3–3.8 in dark = table rule).
 
-3. **The correlation heatmap gets materially weaker under this plan, and there is no free win.** Capping alpha at
-   0.38 is what makes the labels AA-compliant, but it drops the strongest cell from ~5.2:1 (light) / ~7.9:1 (dark)
-   distinct-from-card down to ~2.1 / ~2.7. The cell label is `var(--text)` at `0.85rem` bold ≈ 13.6px — *not* WCAG
-   large text, so 4.5:1 is required, and `--text` (mid dark) against `--card` (mid light) has a dead band where
-   neither reaches it. Loosening to 3:1 does not rescue it either: at 3:1 the fill must go near-black, and 38% of
-   near-black over a near-white card composites to grey, destroying the diverging read. Options, none chosen here
-   because it is a product call:
-   - (a) raise `.corr-cell` to `1.2rem` bold (≥18.66px bold = WCAG large text, 3:1 target) **and** raise the alpha
-     ceiling back toward 0.9, accepting a 3:1 label;
-   - (b) drop the number from saturated cells and show it only on pale ones;
-   - (c) add two near-extreme ink tokens (`--viz-ink-pale` / `--viz-ink-strong`, ~20 more lines) and switch on alpha,
-     accepting a narrow ~4.4:1 band.
+3. **Heatmap → option (a), completed with a luminance ink switch.** `.corr-cell` raised to `1.2rem` bold (19.2px ≥
+   18.66px bold = WCAG large text, 3:1 target), `CORR_MAX_ALPHA = 0.9` (the ramp keeps its full strength), and the
+   label ink flips per cell between `var(--text)` (pale cells) and `var(--card)` (saturated cells) — whichever clears
+   more against the composited fill. This is the only option that keeps a number in every cell, the full-strength
+   ramp, and compliant labels. **Implementation correction:** the agent's ink-flip formula composited in linear space;
+   CSS alpha-compositing happens on sRGB channels first, so the fill must be composited as
+   `alpha * base + (1 - alpha) * cardRgb` in sRGB before computing luminance. Without this, negative cells measured
+   ~2:1 instead of the predicted 3.4:1. Verified 90/90 cells ≥3:1 (min 3.22:1 light, 3.53:1 dark).
 
-4. **Correction to the earlier ΔE claim.** The distinctness numbers in the bug report were adjacent-pair ΔE76. On a
-   like-for-like all-pairs minimum, the blush `emotional` group at n=4 measures **ΔE76 13.4 / CIEDE2000 11.4**, not
-   8.2–9.8. The n=6 figures (8.2 light / 7.9 dark) agree exactly, and the contrast half of the report reproduced to
-   the decimal in both modes. So the distinctness problem is real but **starts around n=5, not n=4** — which is
-   consistent with the new ramp holding 12.5 worst-case at n=4 and falling to 9.0 at n=5. Re-measure once during
-   implementation and correct this document if needed.
+4. **Diverging hues → one fixed semantic pair, defined once in `styles.css`.** A correlation sign is a data encoding,
+   not brand chrome — "rose = moves together" must survive a palette swap. `--viz-pos-rgb: 114, 36, 49` /
+   `--viz-neg-rgb: 42, 52, 119` in `:root`, overridden by `html[data-theme="dark"]` (234, 187, 195 / 193, 198, 233).
+   This replaces the plan's 10 per-palette `palettes.js` blocks entirely. Ownership comment added in `palettes.js` so
+   a future palette block does not silently re-add the keys.
 
-5. **Should the diverging hues be per-palette at all?** A correlation scale is a data encoding, not brand chrome: a
-   reader who learns "pink = moves together" in blush loses that mapping in mint. One fixed semantic pair defined once
-   would be 4 lines instead of 20 and would keep the encoding stable. The plan implements per-palette because that was
-   the brief; the alternative is defensible and worth one sentence from the user before C4 lands.
+5. **n≥5 same-group → accept + document.** The obvious non-colour channel is taken: `borderDash: [6,4]` already means
+   "inverted tracker", and all four default `emotional` trackers are `direction: 'bad'`, so the emotional group is
+   already the dashed one. A hard cap at 4 hides the user's own trackers. Documented in `palettes.js`; if it ever
+   needs fixing, use point shapes or line-end labels, not dashes.
 
 ---
 
@@ -645,10 +653,8 @@ pass. The `var(--pink-100)` / `var(--pink-50)` cells at viz-insights.js:240/252 
   `--card` tooltip will likely fail 4.5:1 on a light card — needs its own decision.
 - **The "What helped" card is the same bug class.** `styles.css:645-646,666` are hardcoded greens that ignore the
   palette entirely.
-- **`updateGroupColors()` misses the `auto` media-query path.** `palettes.js:338` calls `applyPalette` with no
-  follow-up, so an OS theme flip leaves the Track view's group dots stale. One line —
-  `if (typeof updateGroupColors === 'function') updateGroupColors();` in `applyPalette` — fixes it, mirroring D2.
-- **Non-color redundancy for large groups** (dash patterns, endpoint labels) for n ≥ 5.
+- **Non-color redundancy for large groups** (point shapes, line-end labels) for n ≥ 5 — accepted and documented
+  (decision 5); dashes are reserved for "inverted tracker".
 
 ---
 

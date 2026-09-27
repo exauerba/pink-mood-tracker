@@ -100,19 +100,19 @@ window.vizTime = {
         responsive: true,
         maintainAspectRatio: false,
         plugins: {
-          legend: { labels: { font: { family: 'Nunito', weight: 700 }, color: '#5b3a4a' } },
+          legend: { labels: { font: { family: 'Nunito', weight: 700 }, color: cssVar('--text-soft') } },
           tooltip: { titleFont: { family: 'Nunito', weight: 700 } },
         },
         scales: {
           y: {
             min: yRange.min,
             max: yRange.max,
-            ticks: { stepSize: 1, color: '#9d7b8c', font: { family: 'Nunito' } },
-            grid: { color: '#fce7f3' },
+            ticks: { stepSize: 1, color: cssVar('--text-soft'), font: { family: 'Nunito' } },
+            grid: { color: cssVar('--pink-200') },
           },
           x: {
             type: 'category',
-            ticks: { color: '#9d7b8c', font: { family: 'Nunito' } },
+            ticks: { color: cssVar('--text-soft'), font: { family: 'Nunito' } },
             grid: { display: false },
           },
         },
